@@ -274,11 +274,6 @@ class Package(object):
         with open(fname, 'w') as out:
             out.write(txt)
 
-######################################################################
-#   Mixins for installation.  Derive from one of these before Package
-#   to get the best out of Python's MRO
-######################################################################
-
 
 class GnuMakeMixin(object):
     '''Make based build'''
@@ -303,14 +298,6 @@ class AutoconfMixin(GnuMakeMixin, MakeInstallMixin, object):
         return self.main_source_directory_path / 'configure'
 
 
-class InstallInConquestPythonMixin(object):
-    @property
-    def install_directory(self):
-        '''Tcl and other packages must be installed under the same directory as Python on Linux
-           and as a Framework on MacOS to work for the purposes of ConQuest'''
-        return ConquestPythonPackage().install_directory
-
-
 class InstallInConquestPythonBaseMixin(object):
     @property
     def install_directory(self):
@@ -332,7 +319,7 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
 
     @property
     def arguments_to_configuration_script(self):
-        return super().arguments_to_configuration_script + ['--shared']
+        return super().arguments_to_configuration_script + ['--static']
 
 
 class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
@@ -355,11 +342,15 @@ class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
     def cflags(self):
         return super().cflags + [
             '-DSQLITE_ENABLE_FTS3',
+            '-DSQLITE_ENABLE_FTS3_PARENTHESIS',
             '-DSQLITE_ENABLE_FTS4',
             '-DSQLITE_ENABLE_FTS5',
             '-DSQLITE_ENABLE_EXPLAIN_COMMENTS',
             '-DSQLITE_ENABLE_NULL_TRIM',
             '-DSQLITE_MAX_COLUMN=10000',
+            '-DSQLITE_ENABLE_JSON1',
+            '-DSQLITE_ENABLE_RTREE',
+            '-DSQLITE_TCL=0',
         ]
 
     @property
@@ -368,10 +359,20 @@ class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
             '-lm'
         ]
 
+    @property
+    def arguments_to_configuration_script(self):
+        return super().arguments_to_configuration_script + [
+            '--enable-threadsafe',
+            '--enable-shared=no',
+            '--enable-static=yes',
+            '--disable-readline',
+            '--disable-dependency-tracking',
+        ]
 
 class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
     ''' Most of these settings have been based on the Homebrew Formula that can be found here for reference
     https://github.com/Homebrew/homebrew-core/blob/5ab9766e70776ef1702f8d40c8ef5159252c31be/Formula/openssl%401.1.rb
+    more details were pilfered from Python.org's installer creation script
     '''
     name = 'openssl'
     version = '1.1.1f'
@@ -418,17 +419,8 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
 
     def run_install_command(self):
         super().run_install_command()
-        if mac:
-            libcrypto_libpath = Path('lib/libcrypto.1.1.dylib')
-            self.update_dylib_id(self.install_directory /
-                                 libcrypto_libpath, 'libcrypto.1.1.dylib')
-
-            libssl_libpath = Path('lib/libssl.1.1.dylib')
-            self.update_dylib_id(self.install_directory /
-                                 libssl_libpath, 'libssl.1.1.dylib')
-            self.change_dylib_lookup(self.install_directory / libssl_libpath, str(
-                self.install_directory / libcrypto_libpath), '@rpath/libcrypto.1.1.dylib')
         # python build needs .a files in a directory away from .dylib
+        # TODO: this might be unnecessary
         static_libs_path = self.install_directory / 'staticlibs'
         static_libs_path.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(self.install_directory / 'lib' /
@@ -454,10 +446,13 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
             ['make', 'test'],
             env=env, cwd=self.build_directory_path)
 
-
-class TclPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
+# This can get very messy, very quickly, as I found out by following our custom scripts
+# So take a look here for inspiration
+# https://github.com/python/cpython/blob/2.7/Mac/BuildScript/build-installer.py
+class TclPackage(AutoconfMixin, Package):
     name = 'tcl'
     version = '8.6.10'
+    tclversion = '8.6'
 
     @property
     def source_archives(self):
@@ -485,48 +480,44 @@ class TclPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
         return self.source_extracted / f'{self.name}{self.version}'
 
     @property
-    def environment_for_configuration_script(self):
-        env = super().environment_for_configuration_script
+    def install_directory(self):
+        # On mac, this is not required, as all libraries are installed in the python framework
         if mac:
-            env['ac_cv_path_tclsh'] = ''
-        return env
+            return super().install_directory
+        # On Linux, we install inside python
+        return ConquestPythonPackage().python_base_directory
+
+    @property
+    def cflags(self):
+        return super().cflags + [
+            '-DNDEBUG'
+        ]
 
     @property
     def configuration_script(self):
-        # Configuration on MacOS is handled by wizardry in the GNUmakefile in tksource/macosx
-        # By returning None, we skip the configuration step in the base Package class
-        if mac:
-            return None
-        # Linux installation works by installing in the destination python directory
         return self.main_source_directory_path / 'unix' / 'configure'
 
-    # This is only used on linux actually
     @property
     def arguments_to_configuration_script(self):
-        return super().arguments_to_configuration_script + ['--enable-shared']
+        args = super().arguments_to_configuration_script + [
+            '--enable-shared',
+            '--enable-threads',
+            '--enable-64bit',
+        ]
+        if mac:
+            args.extend([
+                f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
+            ])
+        return args
 
     def run_build_command(self):
         if mac:
             self.system([
                 'make',
-                f'-j{multiprocessing.cpu_count()}',
-                '-sw',
-                'deploy',
-                f'INSTALL_ROOT={self.install_directory}',
-                f'PREFIX=""',
-            ],
-                env=self.environment_for_configuration_script, cwd=self.main_source_directory_path / 'macosx')
-
-            # Link tclsh to the actual location of Tcl, rather than where it
-            # would have been without the INSTALL_ROOT argument.
-            # Without this, installing Tcl will fail while generating documentation.
-            tcl_build_dir = self.main_source_directory_path.parent / 'build' / 'tcl'
-            incorrect_location = Path(
-                '/') / self.tcl_versioned_framework_path_in_library / 'Tcl'
-            correct_location = tcl_build_dir / 'Deployment' / \
-                self.tcl_versioned_framework_path / 'Tcl'
-            self.change_dylib_lookup(
-                tcl_build_dir / 'Deployment' / 'tclsh', incorrect_location, correct_location)
+                f'TCL_LIBRARY="{ ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6" }"',
+                f'-j{multiprocessing.cpu_count()}'
+                ],
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
         else:
             super().run_build_command()
 
@@ -541,39 +532,52 @@ class TclPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
     @property
     def include_directories(self):
         '''Return the directories clients must add to their include path'''
-        if mac:
-            return [self.install_directory / 'Library' / 'Frameworks' / 'Tcl.framework' / 'Headers']
         return [self.install_directory / 'include']
+
+    @property
+    def bindir(self):
+        return self.install_directory / "bin"
+
+    @property
+    def tclsh(self):
+        return self.bindir / f"tclsh{ self.tclversion }"
 
     def run_install_command(self):
         if mac:
             self.system([
                 'make',
-                f'-j{multiprocessing.cpu_count()}',
-                '-sw',
-                'install-deploy',
-                f'INSTALL_ROOT={self.install_directory}',
-                f'PREFIX=""',
-                f'TCL_LIB_SPEC="{self.install_directory / "Library" / "Frameworks"}"',
+                'install',
+                f'TCL_LIBRARY="{ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6"}"',
+                f'PACKAGE_DIR={ ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6" }',
             ],
-                env=self.environment_for_configuration_script, cwd=self.main_source_directory_path / 'macosx')
-            # copy msgcat.tcl because pyinstaller won't pick up modules
-            shutil.copytree(
-                self.main_source_directory_path / 'library' / 'msgcat',
-                self.install_directory /
-                'Library' / 'Frameworks' / 'Tcl.framework' / 'Resources' / 'Scripts' / 'msgcat'
-            )
-        # # Fix where Tcl and Tk think they are located.
-        # for tcltk_lib in [tcl_lib, tk_lib]:
-        #     # 755
-        #     os.chmod(tcltk_lib,
-        #         stat.S_IRWXU|stat.S_IRGRP|stat.S_IXGRP|stat.S_IROTH|stat.S_IXOTH )
-        #     change_install_id(tcltk_lib)
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
+            try:
+                os.unlink(self.bindir/'tclsh')
+            except OSError:
+                pass
+            os.symlink(self.bindir /'tclsh8.6', self.bindir/'tclsh')
+            # # copy msgcat.tcl because pyinstaller won't pick up modules
+            # shutil.copytree(
+            #     self.main_source_directory_path / 'library' / 'msgcat',
+            #     self.install_directory /
+            #     'Library' / 'Frameworks' / 'Tcl.framework' / 'Resources' / 'Scripts' / 'msgcat'
+            # )
         else:
             super().run_install_command()
 
+    def verify(self):
+        honk_proc = subprocess.Popen([self.tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        honk_proc.stdin.write("puts honk\n".encode('utf-8'))
+        out = honk_proc.communicate()
+        honk_proc.stdin.close()
+        s0 = out[0].decode().rstrip()
+        if s0 !='honk':
+            print(f'{self.tclsh} won\'t honk, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
+            return False
+        return True
 
-class TkPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
+
+class TkPackage(AutoconfMixin, Package):
     name = 'tk'
     version = '8.6.10'
 
@@ -590,29 +594,48 @@ class TkPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
     @property
     def environment_for_configuration_script(self):
         env = super().environment_for_configuration_script
+        env['PATH']= f"{TclPackage().bindir}:{env['PATH']}"
         if mac:
-            env['ac_cv_path_tclsh'] = ''
+            env['ac_cv_path_tclsh'] = f'{TclPackage().bindir / "tclsh8.6"}'
         return env
 
     @property
     def configuration_script(self):
-        # Configuration on MacOS is handled by wizardry in the GNUmakefile in tksource/macosx
-        # By returning None, we skip the configuration step in the base Package class
-        if mac:
-            return None
-        # Linux installation works by installing in the destination python directory
         return self.main_source_directory_path / 'unix' / 'configure'
 
-    # This is only used on linux actually
+    @property
+    def install_directory(self):
+        return TclPackage().install_directory
+
     @property
     def arguments_to_configuration_script(self):
-        return super().arguments_to_configuration_script + [
-            f'--with-tcl={ TclPackage().install_directory / "lib" }'
-        ]
+        if mac:
+            return super().arguments_to_configuration_script + [
+                f'--with-tcl={ ConquestPythonPackage().python_base_directory / "lib" }',
+                '--enable-aqua',
+                '--enable-shared',
+                '--enable-threads',
+                '--enable-64bit',
+                f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
+            ]
+        else:
+            return super().arguments_to_configuration_script + [
+                '--enable-shared',
+                '--enable-threads',
+                '--enable-64bit',
+                f'--with-tcl={ TclPackage().install_directory / "lib" }'
+            ]
+
 
     def run_build_command(self):
         if mac:
-            pass
+            self.system([
+                'make',
+                f'TCL_LIBRARY="{ ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6" }"',
+                f'TK_LIBRARY="{ ConquestPythonPackage().python_base_directory / "lib" / "tk8.6" }"',
+                f'-j{multiprocessing.cpu_count()}'
+                ],
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
         else:
             super().run_build_command()
 
@@ -620,35 +643,11 @@ class TkPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
         if mac:
             self.system([
                 'make',
-                f'-j{multiprocessing.cpu_count()}',
-                '-sw',
-                'install-deploy',
-                f'INSTALL_ROOT={self.install_directory}',
-                f'PREFIX=""',
-                f'TCLSH_DIR="{self.install_directory / "bin"}"',
-                f'TCL_FRAMEWORK_DIR="{self.install_directory / "Library" / "Frameworks"}"',
+                'install',
+                f'TCL_LIBRARY="{ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6"}"',
+                f'TK_LIBRARY="{ConquestPythonPackage().python_base_directory / "lib" / "tk8.6"}"',
             ],
-                env=self.environment_for_configuration_script, cwd=self.main_source_directory_path / 'macosx')
-            # Link tclsh to the actual location of Tcl, rather than where it
-            # would have been without the INSTALL_ROOT argument.
-            # Without this, installing Tcl will fail while generating documentation.
-            # tcl_build_dir = self.main_source_directory_path.parent / 'build' / 'tcl'
-            # incorrect_location = Path('/') / self.tcl_versioned_framework_path_in_library / 'Tcl'
-            # correct_location = tcl_build_dir / 'Deployment' / self.tcl_versioned_framework_path / 'Tcl'
-            # self.change_dylib_lookup(tcl_build_dir / 'Deployment' / 'tclsh', incorrect_location, correct_location)
-            # # tcl_framework_suffix = os.path.join('/Library', 'Frameworks', 'Tcl.framework')
-            # tcl_lib_suffix = os.path.join(tcl_framework_suffix, 'Versions', tcltk_ver, 'Tcl')
-            # tcl_framework = self.directory + tcl_framework_suffix
-            # tcl_lib = self.directory + tcl_lib_suffix
-            # tk_framework = os.path.join(self.directory, 'Library', 'Frameworks', 'Tk.framework')
-            # tk_lib = os.path.join(tk_framework, 'Versions', tcltk_ver, 'Tk')
-            # change_dependency_location(tcl_lib_suffix, tcl_lib, tk_lib)
-        # # Fix where Tcl and Tk think they are located.
-        # for tcltk_lib in [tcl_lib, tk_lib]:
-        #     # 755
-        #     os.chmod(tcltk_lib,
-        #         stat.S_IRWXU|stat.S_IRGRP|stat.S_IXGRP|stat.S_IROTH|stat.S_IXOTH )
-        #     change_install_id(tcltk_lib)
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
 
         else:
             super().run_install_command()
@@ -656,12 +655,28 @@ class TkPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
     @property
     def include_directories(self):
         '''Return the directories clients must add to their include path'''
-        if mac:
-            return [self.install_directory / 'Library' / 'Frameworks' / 'Tk.framework' / 'Headers']
         return [self.install_directory / 'include']
 
+    def verify(self):
+        itcl_check = '''
+package require Itcl
+package require Tk
+puts "OK"
+exit
+'''
+        itcl_proc = subprocess.Popen([TclPackage().tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        itcl_proc.stdin.write(itcl_check.encode('utf-8'))
+        out = itcl_proc.communicate()
+        itcl_proc.stdin.close()
+        s0 = out[1].decode().rstrip()
+        if "can't find package" in s0:
+            print(f'{TclPackage().tclsh} won\'t do, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
+            return False
 
-class ToglPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
+        return True
+
+
+class ToglPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
     name = 'togl'
     version = 'windows-ci'
 
@@ -676,42 +691,24 @@ class ToglPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
         return self.source_extracted / f'{self.name}-{self.version}'
 
     @property
+    def install_directory(self):
+        return TclPackage().install_directory
+
+    @property
     def build_directory_path(self):
         '''The autoconf script is a bit rubbish, only works in-source :('''
         return self.main_source_directory_path
 
-    @property
-    def cflags(self):
-        if mac:
-            return super().cflags + [
-                '-I.',
-                '-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework/Headers',
-            ]
-        return super().cflags + ['-I.']
-
-    @property
-    def ldflags(self):
-        if mac:
-            return super().ldflags + ['-framework', 'OpenGL']
-        return super().ldflags
-
-    @property
-    def environment_for_configuration_script(self):
-        env = super().environment_for_configuration_script
-        env['PATH'] = env['PATH'] + os.pathsep + \
-            str(self.install_directory / 'bin')
-        return env
 
     @property
     def arguments_to_configuration_script(self):
         args = super().arguments_to_configuration_script
         if mac:
             args += [
-                f'--with-tcl={ TclPackage().install_directory / "lib" }',
-                f'--libdir={ TclPackage().install_directory / "Library" / "Tcl"}',
-                f'--with-tcl={ TclPackage().install_directory / "Library" / "Frameworks" / "Tcl.framework"}',
+                f'--with-tcl={ ConquestPythonPackage().python_base_directory / "lib" }',
+                f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
                 f'--with-tclinclude={ TclPackage().include_directories[0]}',
-                f'--with-tk={ TkPackage().install_directory / "Library" / "Frameworks" / "Tk.framework"}',
+                f'--with-tk={ ConquestPythonPackage().python_base_directory / "lib" }',
                 f'--with-tkinclude={ TkPackage().include_directories[0]}',
             ]
         else:
@@ -721,11 +718,26 @@ class ToglPackage(InstallInConquestPythonMixin, AutoconfMixin, Package):
                 '--with-Xmu',
             ]
         return args
-# # Remove the GL directory provided by Togl and link to the OS X
-# # OpenGL framework header directory instead.
-# togl_gl_dir = os.path.join(togl_src_dir, 'GL')
-# shutil.rmtree(togl_gl_dir)
-# os.symlink(os.path.join(SDKROOT, 'System', 'Library', 'Frameworks', 'OpenGL.framework', 'Headers'), togl_gl_dir)
+
+    def verify(self):
+        itcl_check = '''
+package require Togl
+wm title . "Togl runs"
+togl .o1 -width 200 -height 200 -rgba true -double true -depth true -create double::create_cb -display double::display_cb -reshape double::reshape_cb -multisample false -ident Aliased  
+puts "OK"
+exit
+'''
+        itcl_proc = subprocess.Popen([TclPackage().tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        itcl_proc.stdin.write(itcl_check.encode('utf-8'))
+        out = itcl_proc.communicate()
+        itcl_proc.stdin.close()
+        s0 = out[1].decode().rstrip()
+        if "can't find package" in s0:
+            print(f'{TclPackage().tclsh} won\'t do, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
+            return False
+
+        return True
+
 
 
 class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, Package):
@@ -786,24 +798,13 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
         }
 
     def patch_sources(self):
-        if mac:
-            self.patch(
-                self.main_source_directory_path / 'Modules' / 'Setup.dist',
-                ('#SSL=/usr/local/ssl',
-                 f'SSL={OpensslPackage().install_directory}'),
-                ('#_ssl _ssl.c \\', '_ssl _ssl.c \\'),
-                ('#\t-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \\',
-                 '-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \\'),
-                ('#\t-L$(SSL)/lib -lssl -lcrypto', '-L$(SSL)/lib -lssl -lcrypto')
-            )
-        else:
-            self.patch(
-                self.main_source_directory_path / 'setup.py',
-                ('/usr/contrib/ssl/include/',
-                 f'{OpensslPackage().install_directory}/include'),
-                ('/usr/contrib/ssl/lib/',
-                 f'{OpensslPackage().install_directory}/lib'),
-            )
+        self.patch(
+            self.main_source_directory_path / 'setup.py',
+            ('/usr/contrib/ssl/include/',
+                f'{OpensslPackage().install_directory}/include'),
+            ('/usr/contrib/ssl/lib/',
+                f'{OpensslPackage().install_directory}/lib'),
+        )
 
     @property
     def main_source_directory_path(self):
@@ -825,27 +826,35 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
 
     @property
     def ldflags(self):
-        ldflags = super().ldflags + [
-            f'-L{SqlitePackage().library_link_directories[0]}',
-            f'-L{OpensslPackage().library_link_directories[0]}',
-            '-lsqlite3',
-            '-lssl',
-            '-lcrypto'
-        ]
+        ldflags = super().ldflags
+        wanted_rpath = ':'.join(str(x) for x in
+                                SqlitePackage().library_link_directories
+                                + OpensslPackage().library_link_directories
+                                + self.library_link_directories
+                                # + DbPackage().library_link_directories
+                                )
         if mac:
-            ldflags += [
+            ldflags.extend([
+                f'-rpath {wanted_rpath}',
             ]
-            ldflags.append(f'-I{SDKROOT}/usr/include')
         else:
-            wanted_rpath = ':'.join(str(x) for x in
-                                    SqlitePackage().library_link_directories
-                                    + OpensslPackage().library_link_directories
-                                    + self.library_link_directories
-                                    # + DbPackage().library_link_directories
-                                    )
-            ldflags.append(f'-Wl,-rpath={wanted_rpath}')
+            ldflags.extend([
+                f'-L{SqlitePackage().library_link_directories[0]}',
+                f'-L{OpensslPackage().library_link_directories[0]}',
+                '-lsqlite3',
+                '-lssl',
+                '-lcrypto',
+                f'-Wl,-rpath={wanted_rpath}',
+            ]
 
         return ldflags
+
+    @property
+    def environment_for_configuration_script(self):
+        env = super().environment_for_configuration_script
+        if mac:
+            env['DYLD_LIBRARY_PATH'] = f"{self.python_base_directory / 'lib'}"
+        return env
 
     @property
     def arguments_to_configuration_script(self):
@@ -853,18 +862,23 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
         args += [
             '--enable-optimizations',
             '--with-lto',
+            '--disable-ipv6',
+            '--enable-unicode=ucs4',
         ]
         if mac:
-            frameworks_directory = self.install_directory / "Library" / "Frameworks"
             args += [
                 f'--enable-framework={self.install_directory / "Library" / "Frameworks"}',
-                f'--with-tcltk-includes=-I{TclPackage().include_directories[0]} -I{TkPackage().include_directories[0]}',
-                f'--with-tcltk-libs=-F{frameworks_directory} -framework Tcl -framework Tk',
+                # Tcl and Tk are on the same path
+                f'--with-tcltk-includes=-I{TclPackage().include_directories[0]}',
+                f'--with-tcltk-libs=-L{self.python_base_directory / "lib"}  -ltcl8.6 -ltk8.6',
+                f"LDFLAGS={self.environment_for_configuration_script['LDFLAGS']}",
+                f"CFLAGS={self.environment_for_configuration_script['CFLAGS']}",
+                f"CPPFLAGS={self.environment_for_configuration_script['CFLAGS']}",
+                f"DYLD_LIBRARY_PATH={self.python_base_directory / 'lib'}",
+                f"PKG_CONFIG_PATH={self.python_base_directory / 'lib'/ 'pkgconfig'}",
             ]
         else:
             args += [
-                '--disable-ipv6',
-                '--enable-unicode=ucs4',
                 '--enable-shared',
             ]
         return args
@@ -885,9 +899,9 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
         self.system([str(self.python_exe), '-m', 'pip', 'install',
                      '--upgrade', 'pip', 'setuptools'], append_log=True)
 
-    def pip_install(self, *args):
+    def pip_install(self, *args, env=dict(os.environ)):
         self.system([str(self.python_exe), '-m', 'pip',
-                     'install'] + [arg for arg in args])
+                     'install'] + [arg for arg in args], env=env)
 
 
 #     def verify(self):
@@ -958,10 +972,13 @@ def main():
         'nose==1.3.7',
         'Pillow==6.2.2',
         'nose-parameterized==0.6.0')
-    ConquestPythonPackage().pip_install(
-        'bsddb3==6.2.6',
+    bdb_env=dict(os.environ)
+    bdb_env['BERKELEYDB_DIR']=f'{ConquestPythonPackage().python_base_directory}'
+    ConquestPythonPackage().pip_install('-v',
+        'bsddb3==6.2.7',
         f'--install-option=--berkeley-db={ConquestPythonPackage().python_base_directory}',
-        f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib')
+        f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
+        env=bdb_env)
     ConquestPythonPackage().pip_install(
         'https://github.com/rogerbinns/apsw/releases/download/3.31.1-r1/apsw-3.31.1-r1.zip',
         '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
