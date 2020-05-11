@@ -168,7 +168,8 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     @property
     def source_archives(self):
         return {
-            f'tcl{self.version}-src.tar.gz': f'https://prdownloads.sourceforge.net/tcl/tcl{self.version}-src.tar.gz'
+            # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files 
+            f'tcl{self.version}-src.tar.gz': f'https://ftp.osuosl.org/pub/blfs/conglomeration/tcl/tcl{self.version}-src.tar.gz'
         }
 
     def extract_source_archives(self):
@@ -296,9 +297,9 @@ class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
 
     @property
     def source_archives(self):
-        return { 
-            # Canonical would be https://prdownloads.sourceforge.net/tcl/https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
-            f'tk{self.version}-src.tar.gz': f'https://ftp.osuosl.org/pub/blfs/conglomeration/tcl/tk{self.version}-src.tar.gz'
+        return {
+            # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
+            f'tk{self.version}-src.tar.gz': f'https://fossies.org/linux/misc/tk{self.version}-src.tar.gz'
         }
 
     @property
