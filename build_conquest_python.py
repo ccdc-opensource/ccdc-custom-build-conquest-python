@@ -3,299 +3,12 @@
 import sys
 import subprocess
 import os
-import stat
 import shutil
 import tempfile
 import multiprocessing
 
 from pathlib import Path
-
-from distutils.version import StrictVersion
-
-toolbase = Path('/opt/ccdc/third-party')
-toolbase.mkdir(parents=True, exist_ok=True)
-source_downloads_base = Path('/opt/ccdc/third-party-sources/downloads')
-source_downloads_base.mkdir(parents=True, exist_ok=True)
-source_extracted_base = Path('/opt/ccdc/third-party-sources/extracted')
-source_extracted_base.mkdir(parents=True, exist_ok=True)
-source_builds_base = Path('/opt/ccdc/third-party-sources/builds')
-source_builds_base.mkdir(parents=True, exist_ok=True)
-build_logs = Path('/opt/ccdc/third-party-sources/logs')
-build_logs.mkdir(parents=True, exist_ok=True)
-
-mac = sys.platform == 'darwin'
-if mac:
-    SDKROOT = subprocess.check_output(
-        ['xcrun', '--show-sdk-path'])[:-1].decode('utf8')
-    # For an explanation of these settings see:
-    # https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html
-    assert os.path.exists(SDKROOT)
-    MACOSX_DEPLOYMENT_TARGET = '10.12'
-
-
-class Package(object):
-    '''Base for anything installable'''
-    name = None
-    version = None
-
-    @property
-    def install_directory(self):
-        '''Return the canonical installation directory'''
-        return toolbase / self.name / f'{self.name}-{self.version}'
-
-    @property
-    def include_directories(self):
-        '''Return the directories clients must add to their include path'''
-        return [self.install_directory / 'include']
-
-    @property
-    def library_link_directories(self):
-        '''Return the directories clients must add to their library link path'''
-        return [self.install_directory / 'lib']
-
-    @property
-    def source_archives(self):
-        '''Map of archive file/url to fetch'''
-        return {}
-
-    def fetch_source_archives(self):
-        import urllib.request
-        for filename, url in self.source_archives.items():
-            if (source_downloads_base / filename).exists():
-                print(
-                    f'Skipping download of existing {source_downloads_base / filename}')
-                continue
-            print(f'Fetching {url} to {source_downloads_base / filename}')
-            with urllib.request.urlopen(url) as response:
-                with open(source_downloads_base / filename, 'wb') as final_file:
-                    shutil.copyfileobj(response, final_file)
-
-    def extract_source_archives(self):
-        for source_archive_filename in self.source_archives.keys():
-            self.extract_archive(source_downloads_base /
-                                 source_archive_filename, self.source_extracted)
-
-    def extract_archive(self, path, where):
-        '''untar a file with any reasonable suffix'''
-        print(f'Extracting {path} to {where}')
-        if '.zip' in path.suffixes:
-            self.system(['unzip', '-q', '-o', str(path)], cwd=where)
-            return
-        if '.bz2' in path.suffixes:
-            flags = 'jxf'
-        elif '.gz' in path.suffixes:
-            flags = 'zxf'
-        elif '.tgz' in path.suffixes:
-            flags = 'zxf'
-        elif '.xz' in path.suffixes:
-            flags = 'xf'
-        else:
-            raise AttributeError(f"Can't extract {path}")
-
-        self.system(['tar', flags, str(path)], cwd=where)
-
-    def patch_sources(self):
-        '''Override to patch source code after extraction'''
-        pass
-
-    @property
-    def source_downloads(self):
-        p = source_downloads_base / self.name
-        p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    @property
-    def source_extracted(self):
-        p = source_extracted_base / self.name
-        p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    @property
-    def main_source_directory_path(self):
-        return self.source_extracted / f'{self.name}-{self.version}'
-
-    @property
-    def build_directory_path(self):
-        p = source_builds_base / self.name
-        p.mkdir(parents=True, exist_ok=True)
-        return p
-
-    def cleanup(self):
-        try:
-            shutil.rmtree(self.source_extracted, ignore_errors=True)
-            print(f'Cleaned up {self.source_extracted}')
-        except OSError:
-            pass
-        try:
-            shutil.rmtree(self.build_directory_path, ignore_errors=True)
-            print(f'Cleaned up {self.build_directory_path}')
-        except OSError:
-            pass
-
-    @property
-    def configuration_script(self):
-        return None
-
-    @property
-    def arguments_to_configuration_script(self):
-        return [f'--prefix={self.install_directory}']
-
-    @property
-    def cxxflags(self):
-        flags = [
-            '-O2'
-        ]
-        if mac:
-            flags.extend([
-                '-arch', 'x86_64',
-                '-isysroot', SDKROOT,
-                f'-mmacosx-version-min={MACOSX_DEPLOYMENT_TARGET}',
-            ])
-        return flags
-
-    @property
-    def ldflags(self):
-        flags = []
-        if mac:
-            flags.extend([
-                '-arch', 'x86_64',
-                '-isysroot', SDKROOT,
-                f'-mmacosx-version-min={MACOSX_DEPLOYMENT_TARGET}',
-            ])
-        return flags
-
-    @property
-    def cflags(self):
-        flags = [
-            '-O2'
-        ]
-        if mac:
-            flags.extend([
-                '-arch', 'x86_64',
-                '-isysroot', SDKROOT,
-                f'-mmacosx-version-min={MACOSX_DEPLOYMENT_TARGET}',
-            ])
-        return flags
-
-    @property
-    def environment_for_configuration_script(self):
-        env = dict(os.environ)
-        if self.cflags:
-            env['CFLAGS'] = ' '.join(self.cflags)
-        if self.cxxflags:
-            env['CXXFLAGS'] = ' '.join(self.cxxflags)
-        if self.ldflags:
-            env['LDFLAGS'] = ' '.join(self.ldflags)
-        return env
-
-    def run_configuration_script(self):
-        '''run the required commands to configure a package'''
-        if not self.configuration_script:
-            print(f'Skipping configuration script for {self.name}')
-            return
-        st = os.stat(self.configuration_script)
-        os.chmod(self.configuration_script, st.st_mode | stat.S_IEXEC)
-        self.system(
-            [str(self.configuration_script)] +
-            self.arguments_to_configuration_script,
-            env=self.environment_for_configuration_script, cwd=self.build_directory_path)
-
-    @property
-    def environment_for_build_command(self):
-        return self.environment_for_configuration_script
-
-    def run_build_command(self):
-        '''run the required commands to build a package after configuration'''
-        pass
-
-    def run_install_command(self):
-        '''run the required commands to install a package'''
-        pass
-
-    def logfile_path(self, task):
-        '''Canonical log file for a particular task'''
-        return build_logs / f'{self.name}-{self.version}-{task}.log'
-
-    def system(self, command, cwd=None, env=None, append_log=False):
-        '''execute command, logging in the appropriate logfile'''
-        task = sys._getframe(1).f_code.co_name
-        print(f'{self.name} {task}')
-        if isinstance(command, str):
-            command = [command]
-        print(f'Running {command}')
-        openmode = 'a' if append_log else 'w'
-        with open(self.logfile_path(task), openmode) as f:
-            output = ''
-            p = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd, env=env)
-            while True:
-                retcode = p.poll()
-                l = p.stdout.readline().decode('utf-8')
-                print(l.rstrip())
-                output += l
-                f.write(l)
-                if retcode is not None:
-                    break
-            assert p.returncode is not None
-            if p.returncode != 0:
-                print(f'Failed process environment was {env}')
-                raise subprocess.CalledProcessError(
-                    returncode=p.returncode, cmd=command, output=output)
-
-    def verify(self):
-        '''Override this function to verify that the install has
-        produced something functional.'''
-        pass
-
-    def build(self):
-        self.cleanup()
-        self.fetch_source_archives()
-        self.extract_source_archives()
-        self.patch_sources()
-        self.run_configuration_script()
-        self.run_build_command()
-        self.run_install_command()
-        self.verify()
-
-    def update_dylib_id(self, library_path, new_id):
-        '''MacOS helper to change a library's identifier'''
-        self.system(['install_name_tool', '-id', new_id, str(library_path)])
-
-    def change_dylib_lookup(self, library_path, from_path, to_path):
-        '''MacOS helper to change the path where libraries and executables look for other libraries'''
-        self.system(['install_name_tool', '-change',
-                     from_path, to_path, str(library_path)])
-
-    def patch(self, fname, *subs):
-        with open(fname) as read_file:
-            txt = read_file.read()
-        for (old, new) in subs:
-            txt = txt.replace(old, new)
-        with open(fname, 'w') as out:
-            out.write(txt)
-
-
-class GnuMakeMixin(object):
-    '''Make based build'''
-
-    def run_build_command(self):
-        self.system(['make', f'-j{multiprocessing.cpu_count()}'],
-                    env=self.environment_for_build_command, cwd=self.build_directory_path)
-
-
-class MakeInstallMixin(object):
-    '''Make install (rather than the default do nothing install)'''
-
-    def run_install_command(self):
-        self.system(['make', 'install'],
-                    env=self.environment_for_build_command, cwd=self.build_directory_path)
-
-
-class AutoconfMixin(GnuMakeMixin, MakeInstallMixin, object):
-    '''Autoconf based configure script'''
-    @property
-    def configuration_script(self):
-        return self.main_source_directory_path / 'configure'
+from ccdc.thirdparty.package import Package, AutoconfMixin, MakeInstallMixin, NoArchiveMixin
 
 
 class InstallInConquestPythonBaseMixin(object):
@@ -304,9 +17,8 @@ class InstallInConquestPythonBaseMixin(object):
         '''The nuance with descendants of this class is that these libraries will be installed under the Python Framework on MacOS'''
         return ConquestPythonPackage().python_base_directory
 
-# Individual packages
 
-class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
+class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''Zlib'''
     name = 'zlib'
     version = '1.2.11'
@@ -317,12 +29,8 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
             f'zlib-{self.version}.tar.xz': f'https://www.zlib.net/zlib-{self.version}.tar.xz'
         }
 
-    @property
-    def arguments_to_configuration_script(self):
-        return super().arguments_to_configuration_script + ['--static']
 
-
-class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
+class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''SQLite'''
     name = 'sqlite'
     version = '3.31.1'
@@ -369,7 +77,8 @@ class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
             '--disable-dependency-tracking',
         ]
 
-class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
+
+class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     ''' Most of these settings have been based on the Homebrew Formula that can be found here for reference
     https://github.com/Homebrew/homebrew-core/blob/5ab9766e70776ef1702f8d40c8ef5159252c31be/Formula/openssl%401.1.rb
     more details were pilfered from Python.org's installer creation script
@@ -396,7 +105,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
             'no-ssl3-method',
             'no-zlib',
         ]
-        if mac:
+        if self.macos:
             args += ['darwin64-x86_64-cc', 'enable-ec_nistp_64_gcc_128']
         else:
             args += ['linux-x86_64', 'enable-ec_nistp_64_gcc_128']
@@ -449,7 +158,9 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
 # This can get very messy, very quickly, as I found out by following our custom scripts
 # So take a look here for inspiration
 # https://github.com/python/cpython/blob/2.7/Mac/BuildScript/build-installer.py
-class TclPackage(AutoconfMixin, Package):
+
+
+class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
     version = '8.6.10'
     tclversion = '8.6'
@@ -482,7 +193,7 @@ class TclPackage(AutoconfMixin, Package):
     @property
     def install_directory(self):
         # On mac, this is not required, as all libraries are installed in the python framework
-        if mac:
+        if self.macos:
             return super().install_directory
         # On Linux, we install inside python
         return ConquestPythonPackage().python_base_directory
@@ -504,20 +215,20 @@ class TclPackage(AutoconfMixin, Package):
             '--enable-threads',
             '--enable-64bit',
         ]
-        if mac:
+        if self.macos:
             args.extend([
                 f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
             ])
         return args
 
     def run_build_command(self):
-        if mac:
+        if self.macos:
             self.system([
                 'make',
                 f'TCL_LIBRARY="{ ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6" }"',
                 f'-j{multiprocessing.cpu_count()}'
-                ],
-                    env=self.environment_for_build_command, cwd=self.build_directory_path)
+            ],
+                env=self.environment_for_build_command, cwd=self.build_directory_path)
         else:
             super().run_build_command()
 
@@ -543,19 +254,19 @@ class TclPackage(AutoconfMixin, Package):
         return self.bindir / f"tclsh{ self.tclversion }"
 
     def run_install_command(self):
-        if mac:
+        if self.macos:
             self.system([
                 'make',
                 'install',
                 f'TCL_LIBRARY="{ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6"}"',
                 f'PACKAGE_DIR={ ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6" }',
             ],
-                    env=self.environment_for_build_command, cwd=self.build_directory_path)
+                env=self.environment_for_build_command, cwd=self.build_directory_path)
             try:
                 os.unlink(self.bindir/'tclsh')
             except OSError:
                 pass
-            os.symlink(self.bindir /'tclsh8.6', self.bindir/'tclsh')
+            os.symlink(self.bindir / 'tclsh8.6', self.bindir/'tclsh')
             # # copy msgcat.tcl because pyinstaller won't pick up modules
             # shutil.copytree(
             #     self.main_source_directory_path / 'library' / 'msgcat',
@@ -566,18 +277,20 @@ class TclPackage(AutoconfMixin, Package):
             super().run_install_command()
 
     def verify(self):
-        honk_proc = subprocess.Popen([self.tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        honk_proc = subprocess.Popen(
+            [self.tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         honk_proc.stdin.write("puts honk\n".encode('utf-8'))
         out = honk_proc.communicate()
         honk_proc.stdin.close()
         s0 = out[0].decode().rstrip()
-        if s0 !='honk':
-            print(f'{self.tclsh} won\'t honk, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
+        if s0 != 'honk':
+            print(
+                f'{self.tclsh} won\'t honk, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
             return False
         return True
 
 
-class TkPackage(AutoconfMixin, Package):
+class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tk'
     version = '8.6.10'
 
@@ -594,8 +307,8 @@ class TkPackage(AutoconfMixin, Package):
     @property
     def environment_for_configuration_script(self):
         env = super().environment_for_configuration_script
-        env['PATH']= f"{TclPackage().bindir}:{env['PATH']}"
-        if mac:
+        env['PATH'] = f"{TclPackage().bindir}:{env['PATH']}"
+        if self.macos:
             env['ac_cv_path_tclsh'] = f'{TclPackage().bindir / "tclsh8.6"}'
         return env
 
@@ -609,7 +322,7 @@ class TkPackage(AutoconfMixin, Package):
 
     @property
     def arguments_to_configuration_script(self):
-        if mac:
+        if self.macos:
             return super().arguments_to_configuration_script + [
                 f'--with-tcl={ ConquestPythonPackage().python_base_directory / "lib" }',
                 '--enable-aqua',
@@ -626,28 +339,27 @@ class TkPackage(AutoconfMixin, Package):
                 f'--with-tcl={ TclPackage().install_directory / "lib" }'
             ]
 
-
     def run_build_command(self):
-        if mac:
+        if self.macos:
             self.system([
                 'make',
                 f'TCL_LIBRARY="{ ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6" }"',
                 f'TK_LIBRARY="{ ConquestPythonPackage().python_base_directory / "lib" / "tk8.6" }"',
                 f'-j{multiprocessing.cpu_count()}'
-                ],
-                    env=self.environment_for_build_command, cwd=self.build_directory_path)
+            ],
+                env=self.environment_for_build_command, cwd=self.build_directory_path)
         else:
             super().run_build_command()
 
     def run_install_command(self):
-        if mac:
+        if self.macos:
             self.system([
                 'make',
                 'install',
                 f'TCL_LIBRARY="{ConquestPythonPackage().python_base_directory / "lib" / "tcl8.6"}"',
                 f'TK_LIBRARY="{ConquestPythonPackage().python_base_directory / "lib" / "tk8.6"}"',
             ],
-                    env=self.environment_for_build_command, cwd=self.build_directory_path)
+                env=self.environment_for_build_command, cwd=self.build_directory_path)
 
         else:
             super().run_install_command()
@@ -664,19 +376,21 @@ package require Tk
 puts "OK"
 exit
 '''
-        itcl_proc = subprocess.Popen([TclPackage().tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        itcl_proc = subprocess.Popen([TclPackage(
+        ).tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         itcl_proc.stdin.write(itcl_check.encode('utf-8'))
         out = itcl_proc.communicate()
         itcl_proc.stdin.close()
         s0 = out[1].decode().rstrip()
         if "can't find package" in s0:
-            print(f'{TclPackage().tclsh} won\'t do, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
+            print(
+                f'{TclPackage().tclsh} won\'t do, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
             return False
 
         return True
 
 
-class ToglPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
+class ToglPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     name = 'togl'
     version = 'windows-ci'
 
@@ -699,11 +413,10 @@ class ToglPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
         '''The autoconf script is a bit rubbish, only works in-source :('''
         return self.main_source_directory_path
 
-
     @property
     def arguments_to_configuration_script(self):
         args = super().arguments_to_configuration_script
-        if mac:
+        if self.macos:
             args += [
                 f'--with-tcl={ ConquestPythonPackage().python_base_directory / "lib" }',
                 f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
@@ -727,20 +440,21 @@ togl .o1 -width 200 -height 200 -rgba true -double true -depth true -create doub
 puts "OK"
 exit
 '''
-        itcl_proc = subprocess.Popen([TclPackage().tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        itcl_proc = subprocess.Popen([TclPackage(
+        ).tclsh], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         itcl_proc.stdin.write(itcl_check.encode('utf-8'))
         out = itcl_proc.communicate()
         itcl_proc.stdin.close()
         s0 = out[1].decode().rstrip()
         if "can't find package" in s0:
-            print(f'{TclPackage().tclsh} won\'t do, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
+            print(
+                f'{TclPackage().tclsh} won\'t do, stdout[{out[0].decode()}] stderr[{out[1].decode()}]')
             return False
 
         return True
 
 
-
-class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, Package):
+class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMixin, Package):
     '''AKA BSDDb. This is made by Oracle now. So, DO NOT update this version.'''
     name = 'db'
     version = '5.3.28'
@@ -775,7 +489,7 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, Package):
         ]
 
 
-class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, Package):
+class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     name = 'jpeg'
     version = '9d'
 
@@ -817,8 +531,8 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             f'-I{SqlitePackage().include_directories[0]}',
             f'-I{OpensslPackage().include_directories[0]}',
         ]
-        if mac:
-            cflags.append(f'-I{SDKROOT}/usr/include')
+        if self.macos:
+            cflags.append(f'-I{self.macos_sdkroot}/usr/include')
         else:
             cflags.append('-fPIC')
 
@@ -833,10 +547,10 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
                                 + self.library_link_directories
                                 # + DbPackage().library_link_directories
                                 )
-        if mac:
+        if self.macos:
             ldflags.extend([
                 f'-rpath {wanted_rpath}',
-            ]
+            ])
         else:
             ldflags.extend([
                 f'-L{SqlitePackage().library_link_directories[0]}',
@@ -845,14 +559,14 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
                 '-lssl',
                 '-lcrypto',
                 f'-Wl,-rpath={wanted_rpath}',
-            ]
+            ])
 
         return ldflags
 
     @property
     def environment_for_configuration_script(self):
         env = super().environment_for_configuration_script
-        if mac:
+        if self.macos:
             env['DYLD_LIBRARY_PATH'] = f"{self.python_base_directory / 'lib'}"
         return env
 
@@ -865,7 +579,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             '--disable-ipv6',
             '--enable-unicode=ucs4',
         ]
-        if mac:
+        if self.macos:
             args += [
                 f'--enable-framework={self.install_directory / "Library" / "Frameworks"}',
                 # Tcl and Tk are on the same path
@@ -886,7 +600,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     @property
     def python_base_directory(self):
         '''On MacOS, we must use what goes inside the framework as a base directory'''
-        if mac:
+        if self.macos:
             return self.install_directory / 'Library' / 'Frameworks' / 'Python.framework' / 'Versions' / '2.7'
         return self.install_directory
 
@@ -902,6 +616,17 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     def pip_install(self, *args, env=dict(os.environ)):
         self.system([str(self.python_exe), '-m', 'pip',
                      'install'] + [arg for arg in args], env=env)
+
+    # not building archive, this will come later
+    def build(self):
+        self.cleanup()
+        self.fetch_source_archives()
+        self.extract_source_archives()
+        self.patch_sources()
+        self.run_configuration_script()
+        self.run_build_command()
+        self.run_install_command()
+        self.verify()
 
 
 #     def verify(self):
@@ -948,11 +673,13 @@ class ApswPackage(Package):
             f'{self.name}-{self.version}.zip': f'https://github.com/rogerbinns/apsw/releases/download/{self.version}/{self.name}-{self.version}.zip'
         }
 
+
 def main():
     try:
         shutil.rmtree(ConquestPythonPackage().install_directory)
     except OSError:
         pass
+
     ZlibPackage().build()
     SqlitePackage().build()
     OpensslPackage().build()
@@ -972,18 +699,20 @@ def main():
         'nose==1.3.7',
         'Pillow==6.2.2',
         'nose-parameterized==0.6.0')
-    bdb_env=dict(os.environ)
-    bdb_env['BERKELEYDB_DIR']=f'{ConquestPythonPackage().python_base_directory}'
+    bdb_env = dict(os.environ)
+    bdb_env['BERKELEYDB_DIR'] = f'{ConquestPythonPackage().python_base_directory}'
     ConquestPythonPackage().pip_install('-v',
-        'bsddb3==6.2.7',
-        f'--install-option=--berkeley-db={ConquestPythonPackage().python_base_directory}',
-        f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
-        env=bdb_env)
+                                        'bsddb3==6.2.7',
+                                        f'--install-option=--berkeley-db={ConquestPythonPackage().python_base_directory}',
+                                        f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
+                                        env=bdb_env)
     ConquestPythonPackage().pip_install(
         'https://github.com/rogerbinns/apsw/releases/download/3.31.1-r1/apsw-3.31.1-r1.zip',
         '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
         '--global-option=build', '--global-option=--enable-all-extensions'
     )
+    ConquestPythonPackage().create_archive()
+
 
 if __name__ == "__main__":
     main()

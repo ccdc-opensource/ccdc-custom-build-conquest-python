@@ -8,5 +8,5 @@ This repository contains scripts used to generate conquest's python distribution
 # Build and Test
 
 - Run build_conquest_python.bat on windows
-- Run build_conquest_python.sh on MacOS/Linux
+- Run python3 build_conquest_python.py on MacOS/Linux
 - zip the destination folder and upload to artifactory
