@@ -103,6 +103,8 @@ class Package(object):
         ]
         if 'BUILD_BUILDID' in os.environ:
             components.append(os.environ['BUILD_BUILDID'])
+        else:
+            components.append('do-not-use-me-developer-version')
         components.append(sys.platform)
         if 'BUILD_VS_VERSION' in os.environ:
             components.append(f'vs{os.environ["BUILD_VS_VERSION"]}')
