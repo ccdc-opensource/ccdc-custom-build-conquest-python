@@ -5,6 +5,11 @@ jobs:
   # We use a container to run the build as we must be compatible with centos7's older glibc
   container: rockdreamer/centos7-gcc9:latest
   steps:
+  - task: CmdLine@2
+    inputs:
+      script: 'sudo yum -y install mesa-libGL-devel libX11-devel'
+    displayName: 'Add prerequisites'
+  
   # No need to setup specific python, the container's python3 will be used
   - task: PythonScript@0
     inputs:
