@@ -84,7 +84,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
     more details were pilfered from Python.org's installer creation script
     '''
     name = 'openssl'
-    version = '1.1.1f'
+    version = '1.1.1g'
 
     @property
     def source_archives(self):
@@ -502,13 +502,12 @@ class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
 
 class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     name = 'conquest_python'
-    version = '2.7.17-1'
-    python_version = '2.7.17'
+    version = '2.7.18'
 
     @property
     def source_archives(self):
         return {
-            f'Python-{self.python_version}.tar.xz': f'https://www.python.org/ftp/python/{self.python_version}/Python-{self.python_version}.tar.xz'
+            f'Python-{self.version}.tar.xz': f'https://www.python.org/ftp/python/{self.version}/Python-{self.version}.tar.xz'
         }
 
     def patch_sources(self):
@@ -522,7 +521,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
 
     @property
     def main_source_directory_path(self):
-        return self.source_extracted / f'Python-{self.python_version}'
+        return self.source_extracted / f'Python-{self.version}'
 
     # Todo, might be required in cppflags
     @property
