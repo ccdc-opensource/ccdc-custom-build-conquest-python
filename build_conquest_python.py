@@ -296,8 +296,9 @@ class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
 
     @property
     def source_archives(self):
-        return {
-            f'tk{self.version}-src.tar.gz': f'https://prdownloads.sourceforge.net/tcl/tk{self.version}-src.tar.gz'
+        return { 
+            # Canonical would be https://prdownloads.sourceforge.net/tcl/https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
+            f'tk{self.version}-src.tar.gz': f'https://ftp.osuosl.org/pub/blfs/conglomeration/tcl/tk{self.version}-src.tar.gz'
         }
 
     @property
