@@ -7,7 +7,7 @@ jobs:
   steps:
   - task: CmdLine@2
     inputs:
-      script: 'sudo yum -y install mesa-libGL-devel libX11-devel'
+      script: 'sudo yum -y install mesa-libGL-devel libX11-devel unzip'
     displayName: 'Add prerequisites'
   
   # No need to setup specific python, the container's python3 will be used
@@ -28,7 +28,7 @@ jobs:
   steps:
   - task: CmdLine@2
     inputs:
-      script: 'sudo apt-get -y install libgl1-mesa-dev'
+      script: 'sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev'
     displayName: 'Add prerequisites'
   - task: UsePythonVersion@0
     inputs:
