@@ -150,10 +150,11 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
         # And use CPAN for the packages not distributed with the OS as listed above
         # (note the RHEL 7 package perl-Text-Template is too old for use by OpenSSL);
         # $ cpan install Text::Template Protocol::HTTP2::Client
-        env = self.environment_for_configuration_script
-        self.system(
-            ['make', 'test'],
-            env=env, cwd=self.build_directory_path)
+        # env = self.environment_for_configuration_script
+        # self.system(
+        #     ['make', 'test'],
+        #     env=env, cwd=self.build_directory_path)
+        pass
 
 # This can get very messy, very quickly, as I found out by following our custom scripts
 # So take a look here for inspiration
