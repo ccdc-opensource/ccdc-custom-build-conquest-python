@@ -644,7 +644,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
         # Use the already downloaded package
         installer=self.source_downloads_base / f'python-{self.version}.amd64.msi'
 
-        self.system(['msiexec', '/qn', '/passive', '/i', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
+        self.system(['msiexec', '/qn', '/passive', '/a', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
                     env=self.environment_for_build_command, cwd=self.build_directory_path)
 
 #     def verify(self):
@@ -735,8 +735,11 @@ def main():
         # install apsw
         site_packages_dir = ConquestPythonPackage().install_directory / 'Lib' / 'site-packages'
         apsw_installer= ApswPackage().source_downloads_base / f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
-        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{site_packages_dir}', f'{apsw_installer}'])
-
+        tmpdir=Path('apswtmp')
+        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
+        files = os.listdir(tmpdir / 'PLATLIB')
+        for f in files:
+            shutil.move(str(tmpdir / 'PLATLIB' / f), str(site_packages_dir))
         # install precompiled Togl
         tk85_dir = ConquestPythonPackage().install_directory / 'tcl' / 'tk8.5'
         togl_zip= ToglPackage().source_downloads_base / f'Togl-2.2-pre.zip'
