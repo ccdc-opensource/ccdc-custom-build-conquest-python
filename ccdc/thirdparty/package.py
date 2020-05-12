@@ -67,6 +67,8 @@ class Package(object):
     def source_downloads_base(self):
         '''Return the directory where sources are downloaded'''
         if self.windows:
+            if 'SYSTEM_ARTIFACTSDIRECTORY' in os.environ:
+                return Path(os.environ['SYSTEM_ARTIFACTSDIRECTORY'])
             return Path('D:\\tp\\downloads')
         else:
             return Path('/opt/ccdc/third-party-sources/downloads')
