@@ -507,6 +507,10 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     name = 'conquest_python'
     version = '2.7.18'
 
+    def __init__(self):
+        self.use_vs_version_in_base_name = False
+        self.use_distribution_in_base_name = True
+
     @property
     def source_archives(self):
         return {
@@ -608,6 +612,8 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
 
     @property
     def python_exe(self):
+        if self.windows:
+            return self.python_base_directory / 'python.exe'
         return self.python_base_directory / 'bin' / 'python'
 
     def ensure_pip(self):
@@ -725,6 +731,24 @@ def main():
             '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
             '--global-option=build', '--global-option=--enable-all-extensions'
         )
+    else:
+        # install apsw
+        site_packages_dir = ConquestPythonPackage().install_directory / 'Lib' / 'site-packages'
+        apsw_installer= ApswPackage().source_downloads_base / f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
+        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{site_packages_dir}', f'{apsw_installer}'])
+
+        # install precompiled Togl
+        tk85_dir = ConquestPythonPackage().install_directory / 'tcl' / 'tk8.5'
+        togl_zip= ToglPackage().source_downloads_base / f'Togl-2.2-pre.zip'
+        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tk85_dir}', f'{togl_zip}'])
+
+        # install precompiled bsddb3
+        precompiled_bsddb3 = DbPackage().source_downloads_base / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
+        ConquestPythonPackage().pip_install(str(precompiled_bsddb3))
+
+        # install precompiled pywin32
+        ConquestPythonPackage().pip_install('pywin32==225')
+
     ConquestPythonPackage().create_archive()
 
 

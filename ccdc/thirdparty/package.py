@@ -18,6 +18,10 @@ class Package(object):
     version = None
     _cached_sdkroot = None
 
+    def __init__(self):
+        self.use_vs_version_in_base_name = True
+        self.use_distribution_in_base_name = False
+
     @property
     def macos(self):
         return sys.platform == 'darwin'
@@ -29,6 +33,37 @@ class Package(object):
     @property
     def linux(self):
         return sys.platform.startswith('linux')
+
+    @property
+    def centos(self):
+        return self.linux and Path('/etc/centos-release').exists()
+
+    @property
+    def centos_major_version(self):
+        return subprocess.check_output('rpm -E %{rhel}', shell=True).decode('utf-8').strip()
+
+    @property
+    def debian(self):
+        return self.linux and Path('/etc/debian_version').exists()
+
+    @property
+    def ubuntu(self):
+        return self.debian and subprocess.check_output('lsb_release -i -s', shell=True).decode('utf-8').strip() == 'Ubuntu'
+
+    @property
+    def ubuntu_version(self):
+        return subprocess.check_output('lsb_release -r -s', shell=True).decode('utf-8').strip()
+
+    @property
+    def platform(self):
+        if not self.use_distribution_in_base_name:
+            return sys.platform
+        if not self.linux:
+            return sys.platform
+        if self.centos:
+            return f'centos{self.centos_major_version}'
+        if self.ubuntu:
+            return f'ubuntu{self.ubuntu_version}'
 
     @property
     def macos_sdkroot(self):
@@ -107,8 +142,8 @@ class Package(object):
             components.append(os.environ['BUILD_BUILDID'])
         else:
             components.append('do-not-use-me-developer-version')
-        components.append(sys.platform)
-        if 'BUILD_VS_VERSION' in os.environ:
+        components.append(self.platform)
+        if self.use_vs_version_in_base_name and 'BUILD_VS_VERSION' in os.environ:
             components.append(f'vs{os.environ["BUILD_VS_VERSION"]}')
         return '-'.join(components)
         
