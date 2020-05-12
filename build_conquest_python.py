@@ -622,14 +622,24 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     # not building archive, this will come later
     def build(self):
         self.cleanup()
-        self.fetch_source_archives()
-        self.extract_source_archives()
-        self.patch_sources()
-        self.run_configuration_script()
-        self.run_build_command()
+        if not self.windows:
+            self.fetch_source_archives()
+            self.extract_source_archives()
+            self.patch_sources()
+            self.run_configuration_script()
+            self.run_build_command()
         self.run_install_command()
         self.verify()
 
+    def run_install_command(self):
+        if not self.windows:
+            super().run_install_command()
+            return
+        # Use the already downloaded package
+        installer=self.source_downloads_base / f'python-{self.version}.amd64.msi'
+
+        self.system(['msiexec', '/qn', '/passive', '/i', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
 
 #     def verify(self):
 #         python_exe = self.python_exe(config)
@@ -682,15 +692,16 @@ def main():
     except OSError:
         pass
 
-    ZlibPackage().build()
-    SqlitePackage().build()
-    OpensslPackage().build()
-    TclPackage().build()
-    TkPackage().build()
-    ToglPackage().build()
-    JpegPackage().build()
-    DbPackage().build()
-    # The items above must be installed before python
+    if not Package().windows:
+        ZlibPackage().build()
+        SqlitePackage().build()
+        OpensslPackage().build()
+        TclPackage().build()
+        TkPackage().build()
+        ToglPackage().build()
+        JpegPackage().build()
+        DbPackage().build()
+        # The items above must be installed before python
     ConquestPythonPackage().build()
     ConquestPythonPackage().ensure_pip()
     ConquestPythonPackage().pip_install(
@@ -701,18 +712,19 @@ def main():
         'nose==1.3.7',
         'Pillow==6.2.2',
         'nose-parameterized==0.6.0')
-    bdb_env = dict(os.environ)
-    bdb_env['BERKELEYDB_DIR'] = f'{ConquestPythonPackage().python_base_directory}'
-    ConquestPythonPackage().pip_install('-v',
-                                        'bsddb3==6.2.7',
-                                        f'--install-option=--berkeley-db={ConquestPythonPackage().python_base_directory}',
-                                        f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
-                                        env=bdb_env)
-    ConquestPythonPackage().pip_install(
-        'https://github.com/rogerbinns/apsw/releases/download/3.31.1-r1/apsw-3.31.1-r1.zip',
-        '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
-        '--global-option=build', '--global-option=--enable-all-extensions'
-    )
+    if not Package().windows:
+        bdb_env = dict(os.environ)
+        bdb_env['BERKELEYDB_DIR'] = f'{ConquestPythonPackage().python_base_directory}'
+        ConquestPythonPackage().pip_install('-v',
+                                            'bsddb3==6.2.7',
+                                            f'--install-option=--berkeley-db={ConquestPythonPackage().python_base_directory}',
+                                            f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
+                                            env=bdb_env)
+        ConquestPythonPackage().pip_install(
+            'https://github.com/rogerbinns/apsw/releases/download/3.31.1-r1/apsw-3.31.1-r1.zip',
+            '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
+            '--global-option=build', '--global-option=--enable-all-extensions'
+        )
     ConquestPythonPackage().create_archive()
 
 
