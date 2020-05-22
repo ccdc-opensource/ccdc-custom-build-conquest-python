@@ -141,6 +141,7 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
+
   - task: ArtifactoryCollectIssues@1
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
@@ -159,6 +160,7 @@ jobs:
       buildNumber: '$(Build.BuildNumber)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
