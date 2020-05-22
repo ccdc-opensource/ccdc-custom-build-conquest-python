@@ -20,7 +20,7 @@ jobs:
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)'
+      buildNumber: '$(Build.BuildId)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
 
@@ -53,7 +53,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-centos7'
+      buildNumber: '$(Build.BuildId)-centos7'
       module: 'conquest_python/centos7'
       includeEnvVars: true
       failNoOp: true
@@ -64,7 +64,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-centos7'
+      buildNumber: '$(Build.BuildId)-centos7'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
@@ -88,7 +88,7 @@ jobs:
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)'
+      buildNumber: '$(Build.BuildId)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
   - task: CmdLine@2
@@ -121,7 +121,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-ubuntu1804'
+      buildNumber: '$(Build.BuildId)-ubuntu1804'
       module: 'conquest_python/ubuntu1804'
       includeEnvVars: true
       failNoOp: true
@@ -132,7 +132,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-ubuntu1804'
+      buildNumber: '$(Build.BuildId)-ubuntu1804'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
@@ -157,7 +157,7 @@ jobs:
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)'
+      buildNumber: '$(Build.BuildId)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
 
@@ -187,7 +187,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-darwin'
+      buildNumber: '$(Build.BuildId)-darwin'
       module: 'conquest_python/darwin'
       includeEnvVars: true
       failNoOp: true
@@ -198,7 +198,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-darwin'
+      buildNumber: '$(Build.BuildId)-darwin'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
@@ -224,10 +224,10 @@ jobs:
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)'
+      buildNumber: '$(Build.BuildId)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-      
+
   - task: DownloadPackage@1
     inputs:
       packageType: 'upack'
@@ -291,7 +291,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-windows'
+      buildNumber: '$(Build.BuildId)-windows'
       module: 'conquest_python/windows'
       includeEnvVars: true
       failNoOp: true
@@ -302,7 +302,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildNumber)-windows'
+      buildNumber: '$(Build.BuildId)-windows'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
