@@ -13,14 +13,14 @@ jobs:
         version: 1
         issues:
           trackerName: JIRA
-          regexp: (.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?
+          regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
           keyGroupIndex: 3
           summaryGroupIndex: 1
           trackerUrl: https://jira.ccdc.cam.ac.uk/issues
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)'
+      buildNumber: '$(Build.BuildNumber)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
 
@@ -53,7 +53,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-centos7'
+      buildNumber: '$(Build.BuildNumber)-centos7'
       module: 'conquest_python/centos7'
       includeEnvVars: true
       failNoOp: true
@@ -64,7 +64,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-centos7'
+      buildNumber: '$(Build.BuildNumber)-centos7'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
@@ -81,14 +81,14 @@ jobs:
         version: 1
         issues:
           trackerName: JIRA
-          regexp: (.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?
+          regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
           keyGroupIndex: 3
           summaryGroupIndex: 1
           trackerUrl: https://jira.ccdc.cam.ac.uk/issues
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)'
+      buildNumber: '$(Build.BuildNumber)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
   - task: CmdLine@2
@@ -121,7 +121,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-ubuntu1804'
+      buildNumber: '$(Build.BuildNumber)-ubuntu1804'
       module: 'conquest_python/ubuntu1804'
       includeEnvVars: true
       failNoOp: true
@@ -132,7 +132,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-ubuntu1804'
+      buildNumber: '$(Build.BuildNumber)-ubuntu1804'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
@@ -150,14 +150,14 @@ jobs:
         version: 1
         issues:
           trackerName: JIRA
-          regexp: (.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?
+          regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
           keyGroupIndex: 3
           summaryGroupIndex: 1
           trackerUrl: https://jira.ccdc.cam.ac.uk/issues
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)'
+      buildNumber: '$(Build.BuildNumber)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
 
@@ -187,7 +187,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-darwin'
+      buildNumber: '$(Build.BuildNumber)-darwin'
       module: 'conquest_python/darwin'
       includeEnvVars: true
       failNoOp: true
@@ -198,7 +198,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-darwin'
+      buildNumber: '$(Build.BuildNumber)-darwin'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
@@ -217,16 +217,17 @@ jobs:
         version: 1
         issues:
           trackerName: JIRA
-          regexp: (.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?
+          regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
           keyGroupIndex: 3
           summaryGroupIndex: 1
           trackerUrl: https://jira.ccdc.cam.ac.uk/issues
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)'
+      buildNumber: '$(Build.BuildNumber)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+      
   - task: DownloadPackage@1
     inputs:
       packageType: 'upack'
@@ -290,7 +291,7 @@ jobs:
       replaceSpecVars: true
       collectBuildInfo: true
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-windows'
+      buildNumber: '$(Build.BuildNumber)-windows'
       module: 'conquest_python/windows'
       includeEnvVars: true
       failNoOp: true
@@ -301,7 +302,7 @@ jobs:
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-windows'
+      buildNumber: '$(Build.BuildNumber)-windows'
       excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
