@@ -26,6 +26,7 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
+    displayName: 'Use latest python 3.8'
   # No need to setup specific python, the container's python3 will be used
   - template: common-tasks.yml
     parameters:
@@ -39,6 +40,7 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
+    displayName: 'Use latest python 3.8'
   # No need to setup specific python, the container's python3 will be used
   - template: common-tasks.yml
     parameters:
@@ -66,9 +68,11 @@ jobs:
         }
       replaceSpecVars: true
       failNoOp: true
+    displayName: 'Download windows requirements from artifactory'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
+    displayName: 'Use latest python 3.8'
   # No need to setup specific python, the container's python3 will be used
   - template: common-tasks.yml
     parameters:

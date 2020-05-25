@@ -23,9 +23,10 @@ steps:
           aggregate: true
           aggregationStatus: RELEASED
       buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)'
+      buildNumber: '$(Build.BuildNumber)'
     env:
       JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+    displayName: 'Collect issues'
 
 # Build using whatever the parent task provides us
 - task: PythonScript@0
@@ -51,18 +52,20 @@ steps:
     replaceSpecVars: true
     collectBuildInfo: true
     buildName: '$(Build.DefinitionName)'
-    buildNumber: '$(Build.BuildId)-$(parameters.platformName)'
+    buildNumber: '$(Build.BuildNumber)-$(parameters.platformName)'
     module: 'conquest_python/$(parameters.platformName)'
     includeEnvVars: true
     failNoOp: true
   env:
     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Upload distribution to artifactory'
 
 - task: ArtifactoryPublishBuildInfo@1
   inputs:
     artifactoryService: 'devops-ccdc-3rd-party'
     buildName: '$(Build.DefinitionName)'
-    buildNumber: '$(Build.BuildId)-$(parameters.platformName)'
+    buildNumber: '$(Build.BuildNumber)-$(parameters.platformName)'
     excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
   env:
     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Publish build'
