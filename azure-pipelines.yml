@@ -1,7 +1,3 @@
-variables:
-  # issue collection is failing for some reason, move out until we find out why
-  artifactory.collectIssues: false
-
 jobs:
   - job: Centos7
     pool:
