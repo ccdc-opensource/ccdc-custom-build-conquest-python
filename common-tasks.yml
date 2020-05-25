@@ -1,13 +1,5 @@
-parameters:
-- name: collectIssues # name of the parameter; required
-  type: boolean # data type of the parameter; required
-  default: false
-- name: platformName # name of the parameter; required
-  type: string # data type of the parameter; required
-  default: false
-
 steps:
-- ${{ if eq(parameters.collectIssues, true) }}:
+- ${{ if eq(artifactory.collectIssues, true) }}:
   - task: ArtifactoryCollectIssues@1
     inputs:
       artifactoryService: 'devops-ccdc-3rd-party'
@@ -52,8 +44,8 @@ steps:
     replaceSpecVars: true
     collectBuildInfo: true
     buildName: '$(Build.DefinitionName)'
-    buildNumber: '$(Build.BuildNumber)-$(parameters.platformName)'
-    module: 'conquest_python/$(parameters.platformName)'
+    buildNumber: '$(Build.BuildNumber)-$(artifactory.platformName)'
+    module: 'conquest_python/$(artifactory.platformName)'
     includeEnvVars: true
     failNoOp: true
   env:
@@ -64,7 +56,7 @@ steps:
   inputs:
     artifactoryService: 'devops-ccdc-3rd-party'
     buildName: '$(Build.DefinitionName)'
-    buildNumber: '$(Build.BuildNumber)-$(parameters.platformName)'
+    buildNumber: '$(Build.BuildNumber)-$(artifactory.platformName)'
     excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
   env:
     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'

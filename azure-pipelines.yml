@@ -1,80 +1,79 @@
+variables:
+  # issue collection is failing for some reason, move out until we find out why
+  artifactory.collectIssues: false
+
 jobs:
-- job: Centos7
-  pool:
-    vmImage: 'ubuntu-latest'
-  # We use a container to run the build as we must be compatible with centos7's older glibc
-  container: rockdreamer/centos7-gcc9:latest
-  steps:
-  - task: CmdLine@2
-    inputs:
-      script: 'sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel unzip'
-    displayName: 'Add prerequisites'
-  # No need to setup specific python, the container's python3 will be used
-  - template: common-tasks.yml
-    parameters:
-      collectIssues: false # this is failing for some reason
-      platformName: 'centos7'
+  - job: Centos7
+    pool:
+      vmImage: "ubuntu-latest"
+    # We use a container to run the build as we must be compatible with centos7's older glibc
+    container: rockdreamer/centos7-gcc9:latest
+    variables:
+      artifactory.platformName: "centos7"
+    steps:
+      - task: CmdLine@2
+        inputs:
+          script: "sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel unzip"
+        displayName: "Add prerequisites"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
 
-- job: Ubuntu1804
-  pool:
-    vmImage: 'ubuntu-18.04'
-  steps:
-  - task: CmdLine@2
-    inputs:
-      script: 'sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev'
-    displayName: 'Add prerequisites'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.8'
-    displayName: 'Use latest python 3.8'
-  # No need to setup specific python, the container's python3 will be used
-  - template: common-tasks.yml
-    parameters:
-      collectIssues: false # this is failing for some reason
-      platformName: 'ubuntu18.04'
+  - job: Ubuntu1804
+    pool:
+      vmImage: "ubuntu-18.04"
+    variables:
+      artifactory.platformName: "ubuntu18.04"
+    steps:
+      - task: CmdLine@2
+        inputs:
+          script: "sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev"
+        displayName: "Add prerequisites"
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
 
-- job: macOS
-  pool:
-    vmImage: 'macOS-latest'
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.8'
-    displayName: 'Use latest python 3.8'
-  # No need to setup specific python, the container's python3 will be used
-  - template: common-tasks.yml
-    parameters:
-      collectIssues: false # this is failing for some reason
-      platformName: 'darwin'
+  - job: macOS
+    pool:
+      vmImage: "macOS-latest"
+    variables:
+      artifactory.platformName: "darwin"
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
 
-- job: WindowsVS2019
-  pool:
-    vmImage: 'windows-2019'
-  variables:
-    build_vs_version: '2019'  
-  steps:
-  - task: ArtifactoryGenericDownload@3
-    inputs:
-      connection: 'devops-ccdc-3rd-party'
-      specSource: 'taskConfiguration'
-      fileSpec: |
-        {
-          "files": [
+  - job: WindowsVS2019
+    pool:
+      vmImage: "windows-2019"
+    variables:
+      build_vs_version: "2019"
+      artifactory.platformName: "darwin"
+    steps:
+      - task: ArtifactoryGenericDownload@3
+        inputs:
+          connection: "devops-ccdc-3rd-party"
+          specSource: "taskConfiguration"
+          fileSpec: |
             {
-              "pattern": "conquest-windows-build-requirements/*",
-              "target": "$(System.ArtifactsDirectory)"
+              "files": [
+                {
+                  "pattern": "ccdc-3rdparty-python-interpreters/conquest-windows-build-requirements/*",
+                  "target": "$(System.ArtifactsDirectory)"
+                }
+              ]
             }
-          ]
-        }
-      replaceSpecVars: true
-      failNoOp: true
-    displayName: 'Download windows requirements from artifactory'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.8'
-    displayName: 'Use latest python 3.8'
-  # No need to setup specific python, the container's python3 will be used
-  - template: common-tasks.yml
-    parameters:
-      collectIssues: false # this is failing for some reason
-      platformName: 'windows'
+          replaceSpecVars: true
+          failNoOp: true
+        displayName: "Download windows requirements from artifactory"
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
