@@ -1,0 +1,68 @@
+parameters:
+- name: collectIssues # name of the parameter; required
+  type: boolean # data type of the parameter; required
+  default: false
+- name: platformName # name of the parameter; required
+  type: string # data type of the parameter; required
+  default: false
+
+steps:
+- ${{ if eq(parameters.collectIssues, true) }}:
+  - task: ArtifactoryCollectIssues@1
+    inputs:
+      artifactoryService: 'devops-ccdc-3rd-party'
+      configSource: 'taskConfiguration'
+      taskConfig: |
+        version: 1
+        issues:
+          trackerName: JIRA
+          regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
+          keyGroupIndex: 3
+          summaryGroupIndex: 1
+          trackerUrl: https://jira.ccdc.cam.ac.uk/issues
+          aggregate: true
+          aggregationStatus: RELEASED
+      buildName: '$(Build.DefinitionName)'
+      buildNumber: '$(Build.BuildId)'
+    env:
+      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+
+# Build using whatever the parent task provides us
+- task: PythonScript@0
+  inputs:
+    scriptSource: 'filePath'
+    scriptPath: build_conquest_python.py
+  displayName: 'install conquest_python'
+
+# Upload artifactory build info
+- task: ArtifactoryGenericUpload@2
+  inputs:
+    artifactoryService: 'devops-ccdc-3rd-party'
+    specSource: 'taskConfiguration'
+    fileSpec: |
+      {
+        "files": [
+          {
+            "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
+            "target": "ccdc-3rdparty-python-interpreters"
+          }
+        ]
+      }
+    replaceSpecVars: true
+    collectBuildInfo: true
+    buildName: '$(Build.DefinitionName)'
+    buildNumber: '$(Build.BuildId)-$(parameters.platformName)'
+    module: 'conquest_python/$(parameters.platformName)'
+    includeEnvVars: true
+    failNoOp: true
+  env:
+    JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+
+- task: ArtifactoryPublishBuildInfo@1
+  inputs:
+    artifactoryService: 'devops-ccdc-3rd-party'
+    buildName: '$(Build.DefinitionName)'
+    buildNumber: '$(Build.BuildId)-$(parameters.platformName)'
+    excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
+  env:
+    JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'

@@ -5,92 +5,20 @@ jobs:
   # We use a container to run the build as we must be compatible with centos7's older glibc
   container: rockdreamer/centos7-gcc9:latest
   steps:
-  # - task: ArtifactoryCollectIssues@1
-  #   inputs:
-  #     artifactoryService: 'devops-ccdc-3rd-party'
-  #     configSource: 'taskConfiguration'
-  #     taskConfig: |
-  #       version: 1
-  #       issues:
-  #         trackerName: JIRA
-  #         regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
-  #         keyGroupIndex: 3
-  #         summaryGroupIndex: 1
-  #         trackerUrl: https://jira.ccdc.cam.ac.uk/issues
-  #         aggregate: true
-  #         aggregationStatus: RELEASED
-  #     buildName: '$(Build.DefinitionName)'
-  #     buildNumber: '$(Build.BuildId)'
-  #   env:
-  #     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
   - task: CmdLine@2
     inputs:
       script: 'sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel unzip'
     displayName: 'Add prerequisites'
-  
   # No need to setup specific python, the container's python3 will be used
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-
-  # Upload artifactory build info
-  - task: ArtifactoryGenericUpload@2
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      specSource: 'taskConfiguration'
-      fileSpec: |
-        {
-          "files": [
-            {
-              "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
-              "target": "ccdc-3rdparty-python-interpreters"
-            }
-          ]
-        }
-      replaceSpecVars: true
-      collectBuildInfo: true
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-centos7'
-      module: 'conquest_python/centos7'
-      includeEnvVars: true
-      failNoOp: true
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
-  - task: ArtifactoryPublishBuildInfo@1
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-centos7'
-      excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+  - template: common-tasks.yml
+    parameters:
+      collectIssues: true
+      platformName: 'centos7'
 
 - job: Ubuntu1804
   pool:
     vmImage: 'ubuntu-18.04'
   steps:
-  # - task: ArtifactoryCollectIssues@1
-  #   inputs:
-  #     artifactoryService: 'devops-ccdc-3rd-party'
-  #     configSource: 'taskConfiguration'
-  #     taskConfig: |
-  #       version: 1
-  #       issues:
-  #         trackerName: JIRA
-  #         regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
-  #         keyGroupIndex: 3
-  #         summaryGroupIndex: 1
-  #         trackerUrl: https://jira.ccdc.cam.ac.uk/issues
-  #         aggregate: true
-  #         aggregationStatus: RELEASED
-  #     buildName: '$(Build.DefinitionName)'
-  #     buildNumber: '$(Build.BuildId)'
-  #   env:
-  #     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
   - task: CmdLine@2
     inputs:
       script: 'sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev'
@@ -98,110 +26,24 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-
-  # Upload artifactory build info
-  - task: ArtifactoryGenericUpload@2
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      specSource: 'taskConfiguration'
-      fileSpec: |
-        {
-          "files": [
-            {
-              "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
-              "target": "ccdc-3rdparty-python-interpreters"
-            }
-          ]
-        }
-      replaceSpecVars: true
-      collectBuildInfo: true
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-ubuntu1804'
-      module: 'conquest_python/ubuntu1804'
-      includeEnvVars: true
-      failNoOp: true
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
-  - task: ArtifactoryPublishBuildInfo@1
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-ubuntu1804'
-      excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+  # No need to setup specific python, the container's python3 will be used
+  - template: common-tasks.yml
+    parameters:
+      collectIssues: true
+      platformName: 'ubuntu18.04'
 
 - job: macOS
   pool:
     vmImage: 'macOS-latest'
   steps:
-
-  # - task: ArtifactoryCollectIssues@1
-  #   inputs:
-  #     artifactoryService: 'devops-ccdc-3rd-party'
-  #     configSource: 'taskConfiguration'
-  #     taskConfig: |
-  #       version: 1
-  #       issues:
-  #         trackerName: JIRA
-  #         regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
-  #         keyGroupIndex: 3
-  #         summaryGroupIndex: 1
-  #         trackerUrl: https://jira.ccdc.cam.ac.uk/issues
-  #         aggregate: true
-  #         aggregationStatus: RELEASED
-  #     buildName: '$(Build.DefinitionName)'
-  #     buildNumber: '$(Build.BuildId)'
-  #   env:
-  #     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-
-  # Upload artifactory build info
-  - task: ArtifactoryGenericUpload@2
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      specSource: 'taskConfiguration'
-      fileSpec: |
-        {
-          "files": [
-            {
-              "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
-              "target": "ccdc-3rdparty-python-interpreters"
-            }
-          ]
-        }
-      replaceSpecVars: true
-      collectBuildInfo: true
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-darwin'
-      module: 'conquest_python/darwin'
-      includeEnvVars: true
-      failNoOp: true
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
-  - task: ArtifactoryPublishBuildInfo@1
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-darwin'
-      excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+  # No need to setup specific python, the container's python3 will be used
+  - template: common-tasks.yml
+    parameters:
+      collectIssues: true
+      platformName: 'darwin'
 
 - job: WindowsVS2019
   pool:
@@ -209,25 +51,6 @@ jobs:
   variables:
     build_vs_version: '2019'  
   steps:
-  # - task: ArtifactoryCollectIssues@1
-  #   inputs:
-  #     artifactoryService: 'devops-ccdc-3rd-party'
-  #     configSource: 'taskConfiguration'
-  #     taskConfig: |
-  #       version: 1
-  #       issues:
-  #         trackerName: JIRA
-  #         regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?''
-  #         keyGroupIndex: 3
-  #         summaryGroupIndex: 1
-  #         trackerUrl: https://jira.ccdc.cam.ac.uk/issues
-  #         aggregate: true
-  #         aggregationStatus: RELEASED
-  #     buildName: '$(Build.DefinitionName)'
-  #     buildNumber: '$(Build.BuildId)'
-  #   env:
-  #     JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
   - task: DownloadPackage@1
     inputs:
       packageType: 'upack'
@@ -268,41 +91,8 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.8'
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-
-  # Upload artifactory build info
-  - task: ArtifactoryGenericUpload@2
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      specSource: 'taskConfiguration'
-      fileSpec: |
-        {
-          "files": [
-            {
-              "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
-              "target": "ccdc-3rdparty-python-interpreters"
-            }
-          ]
-        }
-      replaceSpecVars: true
-      collectBuildInfo: true
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-windows'
-      module: 'conquest_python/windows'
-      includeEnvVars: true
-      failNoOp: true
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
-
-  - task: ArtifactoryPublishBuildInfo@1
-    inputs:
-      artifactoryService: 'devops-ccdc-3rd-party'
-      buildName: '$(Build.DefinitionName)'
-      buildNumber: '$(Build.BuildId)-windows'
-      excludeEnvVars: '*password*;*secret*;*key*;*token*;CL_USER;CL_PASSWORD'
-    env:
-      JFROG_CLI_TEMP_DIR: '$(Build.ArtifactStagingDirectory)'
+  # No need to setup specific python, the container's python3 will be used
+  - template: common-tasks.yml
+    parameters:
+      collectIssues: true
+      platformName: 'windows'
