@@ -49,7 +49,7 @@ jobs:
       vmImage: "windows-2019"
     variables:
       build_vs_version: "2019"
-      artifactory.platformName: "darwin"
+      artifactory.platformName: "windows"
     steps:
       - task: ArtifactoryGenericDownload@3
         inputs:
@@ -60,7 +60,9 @@ jobs:
               "files": [
                 {
                   "pattern": "ccdc-3rdparty-python-interpreters/conquest-windows-build-requirements/*",
-                  "target": "$(System.ArtifactsDirectory)"
+                  "target": "$(System.ArtifactsDirectory)",
+                  "flat": true,
+                  "recursive": false
                 }
               ]
             }
