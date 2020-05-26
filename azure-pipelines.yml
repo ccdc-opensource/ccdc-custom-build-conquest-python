@@ -53,16 +53,14 @@ jobs:
     steps:
       - task: ArtifactoryGenericDownload@3
         inputs:
-          connection: "devops-ccdc-3rd-party"
-          specSource: "taskConfiguration"
+          connection: 'devops-ccdc-3rd-party'
+          specSource: 'taskConfiguration'
           fileSpec: |
             {
               "files": [
                 {
                   "pattern": "ccdc-3rdparty-python-interpreters/conquest-windows-build-requirements/*",
-                  "target": "$(System.ArtifactsDirectory)",
-                  "flat": true,
-                  "recursive": false
+                  "target": "$(System.ArtifactsDirectory)"
                 }
               ]
             }
