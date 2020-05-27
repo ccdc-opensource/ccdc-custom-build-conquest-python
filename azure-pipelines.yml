@@ -67,6 +67,11 @@ jobs:
           replaceSpecVars: true
           failNoOp: true
         displayName: "Download windows requirements from artifactory"
+      - task: CmdLine@2
+        inputs:
+          script: "tree $(System.ArtifactsDirectory) /f"
+        displayName: "Contents of ArtifactsDirectory"
+
       - task: UsePythonVersion@0
         inputs:
           versionSpec: "3.8"
