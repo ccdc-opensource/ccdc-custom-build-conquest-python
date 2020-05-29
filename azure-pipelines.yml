@@ -59,8 +59,8 @@ jobs:
             {
               "files": [
                 {
-                  "pattern": "ccdc-3rdparty-python-interpreters/conquest-windows-build-requirements/*",
-                  "target": "$(System.ArtifactsDirectory)"
+                  "pattern": "ccdc-3rdparty-python-interpreters/conquest-windows-build-requirements/",
+                  "target": "$(System.ArtifactsDirectory)/"
                 }
               ]
             }
