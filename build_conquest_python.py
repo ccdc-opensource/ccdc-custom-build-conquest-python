@@ -642,7 +642,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             super().run_install_command()
             return
         # Use the already downloaded package
-        installer=self.source_downloads_base / f'python-{self.version}.amd64.msi'
+        installer=self.source_downloads_base / 'conquest-windows-build-requirements' / f'python-{self.version}.amd64.msi'
 
         self.system(['msiexec', '/qn', '/passive', '/a', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
                     env=self.environment_for_build_command, cwd=self.build_directory_path)
@@ -734,7 +734,7 @@ def main():
     else:
         # install apsw
         site_packages_dir = ConquestPythonPackage().install_directory / 'Lib' / 'site-packages'
-        apsw_installer= ApswPackage().source_downloads_base / f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
+        apsw_installer= ApswPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
         tmpdir=Path('apswtmp')
         ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
         files = os.listdir(tmpdir / 'PLATLIB')
@@ -742,11 +742,11 @@ def main():
             shutil.move(str(tmpdir / 'PLATLIB' / f), str(site_packages_dir))
         # install precompiled Togl
         tk85_dir = ConquestPythonPackage().install_directory / 'tcl' / 'tk8.5'
-        togl_zip= ToglPackage().source_downloads_base / f'Togl-2.2-pre.zip'
+        togl_zip= ToglPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'Togl-2.2-pre.zip'
         ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tk85_dir}', f'{togl_zip}'])
 
         # install precompiled bsddb3
-        precompiled_bsddb3 = DbPackage().source_downloads_base / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
+        precompiled_bsddb3 = DbPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
         ConquestPythonPackage().pip_install(str(precompiled_bsddb3))
 
         # install precompiled pywin32
