@@ -1,120 +1,80 @@
 jobs:
-- job: Centos7
-  pool:
-    vmImage: 'ubuntu-latest'
-  # We use a container to run the build as we must be compatible with centos7's older glibc
-  container: rockdreamer/centos7-gcc9:latest
-  steps:
-  - task: CmdLine@2
-    inputs:
-      script: 'sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel unzip'
-    displayName: 'Add prerequisites'
-  
-  # No need to setup specific python, the container's python3 will be used
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'conquest_python'
-      publishLocation: 'Container'
+  - job: Centos7
+    pool:
+      vmImage: "ubuntu-latest"
+    # We use a container to run the build as we must be compatible with centos7's older glibc
+    container: rockdreamer/centos7-gcc9:latest
+    variables:
+      artifactory.platformName: "centos7"
+    steps:
+      - task: CmdLine@2
+        inputs:
+          script: "sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel unzip"
+        displayName: "Add prerequisites"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
 
-- job: Ubuntu1804
-  pool:
-    vmImage: 'ubuntu-18.04'
-  steps:
-  - task: CmdLine@2
-    inputs:
-      script: 'sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev'
-    displayName: 'Add prerequisites'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.8'
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'conquest_python'
-      publishLocation: 'Container'
+  - job: Ubuntu1804
+    pool:
+      vmImage: "ubuntu-18.04"
+    variables:
+      artifactory.platformName: "ubuntu18.04"
+    steps:
+      - task: CmdLine@2
+        inputs:
+          script: "sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev"
+        displayName: "Add prerequisites"
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
 
-- job: macOS
-  pool:
-    vmImage: 'macOS-latest'
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.8'
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'conquest_python'
-      publishLocation: 'Container'
+  - job: macOS
+    pool:
+      vmImage: "macOS-latest"
+    variables:
+      artifactory.platformName: "darwin"
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
 
-- job: WindowsVS2019
-  pool:
-    vmImage: 'windows-2019'
-  variables:
-    build_vs_version: '2019'  
-  steps:
-  - task: DownloadPackage@1
-    inputs:
-      packageType: 'upack'
-      feed: '5bb2b4cf-422e-43b6-96fe-9c0e119c71d3/2a165bbb-845f-4419-a0ee-dd330924d917'
-      view: '5433165f-a013-48d0-93bf-afcdbd9d2b58'
-      definition: 'f8aff8d1-6070-4a6c-a751-e481081467a6'
-      version: '2.2.0'
-      downloadPath: '$(System.ArtifactsDirectory)'
-      displayName: 'Download Togl'
+  - job: WindowsVS2019
+    pool:
+      vmImage: "windows-2019"
+    variables:
+      build_vs_version: "2019"
+      artifactory.platformName: "windows"
+    steps:
+      - task: ArtifactoryGenericDownload@3
+        inputs:
+          connection: 'devops-ccdc-3rd-party'
+          specSource: 'taskConfiguration'
+          fileSpec: |
+            {
+              "files": [
+                {
+                  "pattern": "ccdc-3rdparty-python-interpreters/conquest-windows-build-requirements/",
+                  "target": "$(System.ArtifactsDirectory)/"
+                }
+              ]
+            }
+          replaceSpecVars: true
+          failNoOp: true
+        displayName: "Download windows requirements from artifactory"
+      - task: CmdLine@2
+        inputs:
+          script: "tree $(System.ArtifactsDirectory) /f"
+        displayName: "Contents of ArtifactsDirectory"
 
-  - task: DownloadPackage@1
-    inputs:
-      packageType: 'upack'
-      feed: '5bb2b4cf-422e-43b6-96fe-9c0e119c71d3/2a165bbb-845f-4419-a0ee-dd330924d917'
-      view: '5433165f-a013-48d0-93bf-afcdbd9d2b58'
-      definition: '250e9026-c0f0-4844-8543-0633b58017ce'
-      version: '2.7.18'
-      downloadPath: '$(System.ArtifactsDirectory)'
-      displayName: 'Download python'
-  - task: DownloadPackage@1
-    inputs:
-      packageType: 'upack'
-      feed: '5bb2b4cf-422e-43b6-96fe-9c0e119c71d3/2a165bbb-845f-4419-a0ee-dd330924d917'
-      view: '5433165f-a013-48d0-93bf-afcdbd9d2b58'
-      definition: '3c07cc42-0842-45b0-8da9-c95149b19bff'
-      version: '6.2.6'
-      downloadPath: '$(System.ArtifactsDirectory)'
-      displayName: 'Download bsddb'
-  - task: DownloadPackage@1
-    inputs:
-      packageType: 'upack'
-      feed: '5bb2b4cf-422e-43b6-96fe-9c0e119c71d3/2a165bbb-845f-4419-a0ee-dd330924d917'
-      view: '5433165f-a013-48d0-93bf-afcdbd9d2b58'
-      definition: '0dd7b46b-5a11-4115-acd0-00e792b27d62'
-      version: '3.31.1-r1'
-      downloadPath: '$(System.ArtifactsDirectory)'
-      displayName: 'Download apsw'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.8'
-  - task: PythonScript@0
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: build_conquest_python.py
-    displayName: 'install conquest_python'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'conquest_python'
-      publishLocation: 'Container'
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
+      # No need to setup specific python, the container's python3 will be used
+      - template: common-tasks.yml
