@@ -485,11 +485,16 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
 
     @property
     def arguments_to_configuration_script(self):
-        return super().arguments_to_configuration_script + [
+        args = [
             '--enable-compat185',
             '--enable-shared',
             '--enable-dbm'
         ]
+        if self.macos:
+            # XCode 12 causes a different mutex implementation to be loaded
+            # so we impose use of posix mutexes
+            args.append('--enable-posixmutexes')
+        return super().arguments_to_configuration_script + args
 
 
 class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
@@ -718,6 +723,16 @@ def main():
         'nose==1.3.7',
         'Pillow==6.2.2',
         'nose-parameterized==0.6.0')
+    # Apply kludge based on https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
+    # to support macos 11
+    # Hopefully, they won't change the path until we replace conquest :)
+    if Package().macos:
+        ConquestPythonPackage().patch(
+            ConquestPythonPackage().python_base_directory / 'lib' / 'python2.7' / 'site-packages' / 'OpenGL' / 'platform' / 'ctypesloader.py',
+            ('fullName = util.find_library( name )',
+                "fullName = '/System/Library/Frameworks/OpenGL.framework/OpenGL'"),
+        )
+
     if not Package().windows:
         bdb_env = dict(os.environ)
         bdb_env['BERKELEYDB_DIR'] = f'{ConquestPythonPackage().python_base_directory}'
