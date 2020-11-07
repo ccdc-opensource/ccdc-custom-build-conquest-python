@@ -727,6 +727,8 @@ def main():
         'mock==3.0.5',
         'pytest==4.6.11',
         'six==1.15.0',
+        'pylint==1.9.5',
+        'flake8==3.8.4',
         )
     # Apply kludge based on https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
     # to support macos 11
