@@ -720,9 +720,14 @@ def main():
         'numpy==1.16.6',
         'PyInstaller==3.5',
         'PyOpenGL==3.1.0',
-        'nose==1.3.7',
         'Pillow==6.2.2',
-        'nose-parameterized==0.6.0')
+        'nose==1.3.7',
+        'nose-parameterized==0.6.0',
+        'funcsigs==1.0.2',
+        'mock==3.0.5',
+        'pytest==4.6.11',
+        'six==1.15.0',
+        )
     # Apply kludge based on https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
     # to support macos 11
     # Hopefully, they won't change the path until we replace conquest :)
