@@ -721,14 +721,15 @@ def main():
         'PyInstaller==3.5',
         'PyOpenGL==3.1.0',
         'Pillow==6.2.2',
-        'nose==1.3.7',
-        'nose-parameterized==0.6.0',
         'funcsigs==1.0.2',
         'mock==3.0.5',
-        'pytest==4.6.11',
         'six==1.15.0',
         'pylint==1.9.5',
         'flake8==3.8.4',
+        'pytest==4.6.11',
+        'pytest-xdist==1.34.0',
+        'pytest-instafail==0.4.2',
+        'pytest-cov==2.10.1',
         )
     # Apply kludge based on https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
     # to support macos 11
