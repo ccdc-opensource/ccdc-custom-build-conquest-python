@@ -59,6 +59,7 @@ class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMi
             '-DSQLITE_ENABLE_JSON1',
             '-DSQLITE_ENABLE_RTREE',
             '-DSQLITE_TCL=0',
+            '-fPIC',
         ]
 
     @property
