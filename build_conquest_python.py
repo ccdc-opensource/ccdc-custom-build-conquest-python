@@ -708,7 +708,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
 
 class ApswPackage(Package):
     name = 'apsw'
-    version = '3.31.1-r1'
+    version = '3.34.0-r1'
 
     @property
     def source_archives(self):
@@ -771,8 +771,8 @@ def main():
                                             f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
                                             env=bdb_env)
         ConquestPythonPackage().pip_install(
-            'https://github.com/rogerbinns/apsw/releases/download/3.31.1-r1/apsw-3.31.1-r1.zip',
-            '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
+            'https://github.com/rogerbinns/apsw/releases/download/3.34.0-r1/apsw-3.34.0-r1.zip',
+            '--global-option=fetch', '--global-option=--version', '--global-option=3.34.0', '--global-option=--all',
             '--global-option=build', '--global-option=--enable-all-extensions'
         )
     else:
