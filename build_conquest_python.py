@@ -128,7 +128,9 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
             env=self.environment_for_configuration_script, cwd=self.build_directory_path)
 
     def run_install_command(self):
-        super().run_install_command()
+        # No need to install man pages etc
+        self.system(['make', 'install_sw'],
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
         # python build needs .a files in a directory away from .dylib
         # TODO: this might be unnecessary
         static_libs_path = self.install_directory / 'staticlibs'
