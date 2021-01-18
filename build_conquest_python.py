@@ -85,7 +85,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
     more details were pilfered from Python.org's installer creation script
     '''
     name = 'openssl'
-    version = '1.1.1g'
+    version = '1.1.1i'
 
     @property
     def source_archives(self):
