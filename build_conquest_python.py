@@ -33,8 +33,8 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
 class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''SQLite'''
     name = 'sqlite'
-    version = '3.31.1'
-    tarversion = '3310100'
+    version = '3.34.0'
+    tarversion = '3340000'
 
     @property
     def source_archives(self):
