@@ -8,7 +8,7 @@ import tempfile
 import multiprocessing
 
 from pathlib import Path
-from ccdc.thirdparty.package import Package, AutoconfMixin, MakeInstallMixin, NoArchiveMixin
+from ccdc.thirdparty.package import Package, AutoconfMixin, MakeInstallMixin, NoArchiveMixin, CMakeMixin
 
 
 class InstallInConquestPythonBaseMixin(object):
@@ -509,6 +509,24 @@ class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
             f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9d.tar.gz'
         }
 
+class TiffPackage(InstallInConquestPythonBaseMixin, CMakeMixin, NoArchiveMixin, Package):
+    name = 'tiff'
+    version = '4.2.0'
+
+    @property
+    def source_archives(self):
+        return {
+            f'tiff-{self.version}.tar.gz': f'http://download.osgeo.org/libtiff/tiff-{self.version}.tar.gz'
+        }
+
+    @property
+    def arguments_to_configuration_script(self):
+        return [
+            f'-DCMAKE_INSTALL_PREFIX={self.install_directory}',
+            f'-DCMAKE_PREFIX_PATH={ ConquestPythonPackage().python_base_directory }',
+            self.main_source_directory_path,
+        ]
+
 
 class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     name = 'conquest_python'
@@ -713,6 +731,7 @@ def main():
         TkPackage().build()
         ToglPackage().build()
         JpegPackage().build()
+        TiffPackage().build()
         DbPackage().build()
         # The items above must be installed before python
     ConquestPythonPackage().build()
