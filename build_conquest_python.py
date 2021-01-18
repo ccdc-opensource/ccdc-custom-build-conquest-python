@@ -172,7 +172,7 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     @property
     def source_archives(self):
         return {
-            # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files 
+            # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files
             f'tcl{self.version}-src.tar.gz': f'https://kumisystems.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tcl{self.version}-src.tar.gz'
         }
 
@@ -511,6 +511,7 @@ class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
             f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9d.tar.gz'
         }
 
+
 class TiffPackage(InstallInConquestPythonBaseMixin, CMakeMixin, NoArchiveMixin, Package):
     name = 'tiff'
     version = '4.2.0'
@@ -582,12 +583,12 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
                 f'-rpath { self.python_base_directory / "lib" }',
             ])
         else:
-        wanted_rpath = ':'.join(str(x) for x in
-                                SqlitePackage().library_link_directories
-                                + OpensslPackage().library_link_directories
-                                + self.library_link_directories
-                                # + DbPackage().library_link_directories
-                                )
+            wanted_rpath = ':'.join(str(x) for x in
+                                    SqlitePackage().library_link_directories
+                                    + OpensslPackage().library_link_directories
+                                    + self.library_link_directories
+                                    # + DbPackage().library_link_directories
+                                    )
             ldflags.extend([
                 f'-L{self.library_link_directories[0]}',
                 f'-L{SqlitePackage().library_link_directories[0]}',
@@ -673,7 +674,9 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             super().run_install_command()
             return
         # Use the already downloaded package
-        installer=self.source_downloads_base / 'conquest-windows-build-requirements' / f'python-{self.version}.amd64.msi'
+        installer = self.source_downloads_base / \
+            'conquest-windows-build-requirements' / \
+            f'python-{self.version}.amd64.msi'
 
         self.system(['msiexec', '/qn', '/passive', '/a', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
                     env=self.environment_for_build_command, cwd=self.build_directory_path)
@@ -711,6 +714,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
 #                 shutil.rmtree(tempd)
 
 ######################################################################
+
 
 class ApswPackage(Package):
     name = 'apsw'
@@ -757,13 +761,14 @@ def main():
         'pytest-xdist==1.34.0',
         'pytest-instafail==0.4.2',
         'pytest-cov==2.10.1',
-        )
+    )
     # Apply kludge based on https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
     # to support macos 11
     # Hopefully, they won't change the path until we replace conquest :)
     if Package().macos:
         ConquestPythonPackage().patch(
-            ConquestPythonPackage().python_base_directory / 'lib' / 'python2.7' / 'site-packages' / 'OpenGL' / 'platform' / 'ctypesloader.py',
+            ConquestPythonPackage().python_base_directory / 'lib' / 'python2.7' /
+            'site-packages' / 'OpenGL' / 'platform' / 'ctypesloader.py',
             ('fullName = util.find_library( name )',
                 "fullName = '/System/Library/Frameworks/OpenGL.framework/OpenGL'"),
         )
@@ -783,20 +788,26 @@ def main():
         )
     else:
         # install apsw
-        site_packages_dir = ConquestPythonPackage().install_directory / 'Lib' / 'site-packages'
-        apsw_installer= ApswPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
-        tmpdir=Path('apswtmp')
-        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
+        site_packages_dir = ConquestPythonPackage().install_directory / \
+            'Lib' / 'site-packages'
+        apsw_installer = ApswPackage().source_downloads_base / 'conquest-windows-build-requirements' / \
+            f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
+        tmpdir = Path('apswtmp')
+        ConquestPythonPackage().system(
+            ['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
         files = os.listdir(tmpdir / 'PLATLIB')
         for f in files:
             shutil.move(str(tmpdir / 'PLATLIB' / f), str(site_packages_dir))
         # install precompiled Togl
         tk85_dir = ConquestPythonPackage().install_directory / 'tcl' / 'tk8.5'
-        togl_zip= ToglPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'Togl-2.2-pre.zip'
-        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tk85_dir}', f'{togl_zip}'])
+        togl_zip = ToglPackage().source_downloads_base / \
+            'conquest-windows-build-requirements' / f'Togl-2.2-pre.zip'
+        ConquestPythonPackage().system(
+            ['7z', 'x', '-aoa', f'-o{tk85_dir}', f'{togl_zip}'])
 
         # install precompiled bsddb3
-        precompiled_bsddb3 = DbPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
+        precompiled_bsddb3 = DbPackage().source_downloads_base / \
+            'conquest-windows-build-requirements' / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
         ConquestPythonPackage().pip_install(str(precompiled_bsddb3))
 
         # install precompiled pywin32
