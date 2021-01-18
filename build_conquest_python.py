@@ -576,18 +576,20 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     @property
     def ldflags(self):
         ldflags = super().ldflags
+        if self.macos:
+            ldflags.extend([
+                f'-L{self.python_base_directory / "lib"}',
+                f'-rpath { self.python_base_directory / "lib" }',
+            ])
+        else:
         wanted_rpath = ':'.join(str(x) for x in
                                 SqlitePackage().library_link_directories
                                 + OpensslPackage().library_link_directories
                                 + self.library_link_directories
                                 # + DbPackage().library_link_directories
                                 )
-        if self.macos:
             ldflags.extend([
-                f'-rpath {wanted_rpath}',
-            ])
-        else:
-            ldflags.extend([
+                f'-L{self.library_link_directories[0]}',
                 f'-L{SqlitePackage().library_link_directories[0]}',
                 f'-L{OpensslPackage().library_link_directories[0]}',
                 '-lsqlite3',
