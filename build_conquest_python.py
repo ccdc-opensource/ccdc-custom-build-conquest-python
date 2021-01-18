@@ -164,30 +164,30 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
 
 class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
-    version = '8.6.10'
+    version = '8.6.11'
     tclversion = '8.6'
 
     @property
     def source_archives(self):
         return {
             # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files 
-            f'tcl{self.version}-src.tar.gz': f'https://ftp.osuosl.org/pub/blfs/conglomeration/tcl/tcl{self.version}-src.tar.gz'
+            f'tcl{self.version}-src.tar.gz': f'https://kumisystems.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tcl{self.version}-src.tar.gz'
         }
 
     def extract_source_archives(self):
         super().extract_source_archives()
         # Remove packages we don't want to build
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'sqlite3.30.1.2')
-        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.1')
+                      'pkgs' / 'sqlite3.34.0')
+        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcmysql1.1.1')
+                      'pkgs' / 'tdbcmysql1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcodbc1.1.1')
+                      'pkgs' / 'tdbcodbc1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcpostgres1.1.1')
+                      'pkgs' / 'tdbcpostgres1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcsqlite3-1.1.1')
+                      'pkgs' / 'tdbcsqlite3-1.1.2')
 
     @property
     def main_source_directory_path(self):
