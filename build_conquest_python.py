@@ -563,6 +563,8 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             f'-I{OpensslPackage().include_directories[0]}',
         ]
         if self.macos:
+            # It's important to keep the TclPackage includes ahead of the main usr/inlude
+            cflags.append(f'-I{TclPackage().include_directories[0]}')
             cflags.append(f'-I{self.macos_sdkroot}/usr/include')
         else:
             cflags.append('-fPIC')
