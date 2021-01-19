@@ -338,7 +338,8 @@ class Package(object):
             print(f'Skipping configuration script for {self.name}')
             return
         st = os.stat(self.configuration_script)
-        os.chmod(self.configuration_script, st.st_mode | stat.S_IEXEC)
+        if '/usr/' not in str(self.configuration_script):
+            os.chmod(self.configuration_script, st.st_mode | stat.S_IEXEC)
         self.system(
             [str(self.configuration_script)] +
             self.arguments_to_configuration_script,
