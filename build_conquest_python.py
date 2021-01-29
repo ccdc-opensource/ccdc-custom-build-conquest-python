@@ -496,7 +496,10 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
         ]
         if self.macos:
             # XCode 12 causes a different mutex implementation to be loaded
-            # so we impose use of posix mutexes
+            # so we impose use of posix mutexes and avoid the presence of 
+            # private between pthreads and x86_64
+            args.append('--with-mutex=POSIX/pthreads/x86_64/gcc-assembly')
+            args.append('--enable-mutex-support')
             args.append('--enable-posixmutexes')
         return super().arguments_to_configuration_script + args
 
