@@ -681,39 +681,8 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
         self.system(['msiexec', '/qn', '/passive', '/a', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
                     env=self.environment_for_build_command, cwd=self.build_directory_path)
 
-#     def verify(self):
-#         python_exe = self.python_exe(config)
-
-#         test_scripts = ['''
-# import sys, os
-# try:
-#     import Tkinter
-# except ImportError:
-#     import tkinter as Tkinter
-# if sys.platform != "darwin" and "DISPLAY" in os.environ:
-#     Tkinter.Tk()
-# ''',
-#                         '''
-# import sqlite3
-# import distutils.version
-# # Ensure we haven't inadvertently got the (ancient) system SQLite
-# assert distutils.version.LooseVersion('3.7.4') <= distutils.version.LooseVersion(sqlite3.sqlite_version)
-# sqlite3.connect(":memory:")
-# ''',
-#                         ]
-
-#         for s in test_scripts:
-#             tempd = tempfile.mkdtemp()
-#             try:
-#                 tempf = os.path.join(tempd, 'test.py')
-#                 with open(tempf, 'w') as f:
-#                     f.write(s)
-#                 subprocess.check_call(
-#                     ' '.join([python_exe, tempf]), shell=True)
-#             finally:
-#                 shutil.rmtree(tempd)
-
-######################################################################
+    def smoke_test(self):
+        subprocess.check_call([f'{ self.python_exe }', 'smoke_test.py'])
 
 
 class ApswPackage(Package):
@@ -814,6 +783,7 @@ def main():
         # install precompiled pywin32
         ConquestPythonPackage().pip_install('pywin32==225')
 
+    ConquestPythonPackage().smoke_test()
     ConquestPythonPackage().create_archive()
 
 
