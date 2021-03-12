@@ -9,8 +9,16 @@ jobs:
     steps:
       - task: CmdLine@2
         inputs:
-          script: "sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel libXft-devel unzip"
+          script: "sudo yum -y install mesa-libGL-devel libX11-devel libXmu-devel libXft-devel unzip wget"
         displayName: "Add prerequisites"
+      - task: CmdLine@2
+        inputs:
+          script: "wget -O /tmp/cmake-3.17.1-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.17/cmake-3.17.1-Linux-x86_64.sh'"
+        displayName: "Fetch cmake"
+      - task: CmdLine@2
+        inputs:
+          script: "sudo bash /tmp/cmake-3.17.1-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
+        displayName: "Install cmake"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
 
@@ -22,8 +30,16 @@ jobs:
     steps:
       - task: CmdLine@2
         inputs:
-          script: "sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev libxft-dev"
+          script: "sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev libxft-dev wget"
         displayName: "Add prerequisites"
+      - task: CmdLine@2
+        inputs:
+          script: "wget -O /tmp/cmake-3.17.1-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.17/cmake-3.17.1-Linux-x86_64.sh'"
+        displayName: "Fetch cmake"
+      - task: CmdLine@2
+        inputs:
+          script: "sudo bash /tmp/cmake-3.17.1-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
+        displayName: "Install cmake"
       - task: UsePythonVersion@0
         inputs:
           versionSpec: "3.8"

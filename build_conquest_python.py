@@ -8,7 +8,7 @@ import tempfile
 import multiprocessing
 
 from pathlib import Path
-from ccdc.thirdparty.package import Package, AutoconfMixin, MakeInstallMixin, NoArchiveMixin
+from ccdc.thirdparty.package import Package, AutoconfMixin, MakeInstallMixin, NoArchiveMixin, CMakeMixin
 
 
 class InstallInConquestPythonBaseMixin(object):
@@ -33,8 +33,8 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
 class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''SQLite'''
     name = 'sqlite'
-    version = '3.31.1'
-    tarversion = '3310100'
+    version = '3.34.0'
+    tarversion = '3340000'
 
     @property
     def source_archives(self):
@@ -85,7 +85,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
     more details were pilfered from Python.org's installer creation script
     '''
     name = 'openssl'
-    version = '1.1.1g'
+    version = '1.1.1i'
 
     @property
     def source_archives(self):
@@ -128,7 +128,9 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
             env=self.environment_for_configuration_script, cwd=self.build_directory_path)
 
     def run_install_command(self):
-        super().run_install_command()
+        # No need to install man pages etc
+        self.system(['make', 'install_sw'],
+                    env=self.environment_for_build_command, cwd=self.build_directory_path)
         # python build needs .a files in a directory away from .dylib
         # TODO: this might be unnecessary
         static_libs_path = self.install_directory / 'staticlibs'
@@ -164,30 +166,30 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
 
 class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
-    version = '8.6.10'
+    version = '8.6.11'
     tclversion = '8.6'
 
     @property
     def source_archives(self):
         return {
-            # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files 
-            f'tcl{self.version}-src.tar.gz': f'https://ftp.osuosl.org/pub/blfs/conglomeration/tcl/tcl{self.version}-src.tar.gz'
+            # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files
+            f'tcl{self.version}-src.tar.gz': f'https://kumisystems.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tcl{self.version}-src.tar.gz'
         }
 
     def extract_source_archives(self):
         super().extract_source_archives()
         # Remove packages we don't want to build
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'sqlite3.30.1.2')
-        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.1')
+                      'pkgs' / 'sqlite3.34.0')
+        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcmysql1.1.1')
+                      'pkgs' / 'tdbcmysql1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcodbc1.1.1')
+                      'pkgs' / 'tdbcodbc1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcpostgres1.1.1')
+                      'pkgs' / 'tdbcpostgres1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcsqlite3-1.1.1')
+                      'pkgs' / 'tdbcsqlite3-1.1.2')
 
     @property
     def main_source_directory_path(self):
@@ -295,13 +297,14 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
 
 class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tk'
-    version = '8.6.10'
+    version = '8.6.11'
 
     @property
     def source_archives(self):
         return {
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
-            f'tk{self.version}-src.tar.gz': f'https://fossies.org/linux/misc/tk{self.version}-src.tar.gz'
+            # How lovely to have a different tcl and tk version....
+            f'tk{self.version}-src.tar.gz': f'https://kumisystems.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
         }
 
     @property
@@ -493,7 +496,10 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
         ]
         if self.macos:
             # XCode 12 causes a different mutex implementation to be loaded
-            # so we impose use of posix mutexes
+            # so we impose use of posix mutexes and avoid the presence of 
+            # private between pthreads and x86_64
+            args.append('--with-mutex=POSIX/pthreads/x86_64/gcc-assembly')
+            args.append('--enable-mutex-support')
             args.append('--enable-posixmutexes')
         return super().arguments_to_configuration_script + args
 
@@ -505,8 +511,27 @@ class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
     @property
     def source_archives(self):
         return {
-            f'jpegsrc.v{self.version}.tar.gz': f'http://jpegclub.org/reference/wp-content/uploads/2020/01/jpegsrc.v9d.tar.gz'
+            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9d.tar.gz'
         }
+
+
+class TiffPackage(InstallInConquestPythonBaseMixin, CMakeMixin, NoArchiveMixin, Package):
+    name = 'tiff'
+    version = '4.2.0'
+
+    @property
+    def source_archives(self):
+        return {
+            f'tiff-{self.version}.tar.gz': f'http://download.osgeo.org/libtiff/tiff-{self.version}.tar.gz'
+        }
+
+    @property
+    def arguments_to_configuration_script(self):
+        return [
+            f'-DCMAKE_INSTALL_PREFIX={self.install_directory}',
+            f'-DCMAKE_PREFIX_PATH={ ConquestPythonPackage().python_base_directory }',
+            self.main_source_directory_path,
+        ]
 
 
 class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
@@ -544,6 +569,8 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             f'-I{OpensslPackage().include_directories[0]}',
         ]
         if self.macos:
+            # It's important to keep the TclPackage includes ahead of the main usr/inlude
+            cflags.append(f'-I{TclPackage().include_directories[0]}')
             cflags.append(f'-I{self.macos_sdkroot}/usr/include')
         else:
             cflags.append('-fPIC')
@@ -553,18 +580,20 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     @property
     def ldflags(self):
         ldflags = super().ldflags
-        wanted_rpath = ':'.join(str(x) for x in
-                                SqlitePackage().library_link_directories
-                                + OpensslPackage().library_link_directories
-                                + self.library_link_directories
-                                # + DbPackage().library_link_directories
-                                )
         if self.macos:
             ldflags.extend([
-                f'-rpath {wanted_rpath}',
+                f'-L{self.python_base_directory / "lib"}',
+                f'-rpath { self.python_base_directory / "lib" }',
             ])
         else:
+            wanted_rpath = ':'.join(str(x) for x in
+                                    SqlitePackage().library_link_directories
+                                    + OpensslPackage().library_link_directories
+                                    + self.library_link_directories
+                                    # + DbPackage().library_link_directories
+                                    )
             ldflags.extend([
+                f'-L{self.library_link_directories[0]}',
                 f'-L{SqlitePackage().library_link_directories[0]}',
                 f'-L{OpensslPackage().library_link_directories[0]}',
                 '-lsqlite3',
@@ -648,53 +677,26 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             super().run_install_command()
             return
         # Use the already downloaded package
-        installer=self.source_downloads_base / 'conquest-windows-build-requirements' / f'python-{self.version}.amd64.msi'
+        installer = self.source_downloads_base / \
+            'conquest-windows-build-requirements' / \
+            f'python-{self.version}.amd64.msi'
 
         self.system(['msiexec', '/qn', '/passive', '/a', f'{installer}', f'TARGETDIR={self.install_directory}', 'ADDLOCAL=TclTk,Tools,Testsuite'],
                     env=self.environment_for_build_command, cwd=self.build_directory_path)
 
-#     def verify(self):
-#         python_exe = self.python_exe(config)
+    def smoke_test(self):
+        subprocess.check_call([f'{ self.python_exe }', 'smoke_test.py'])
 
-#         test_scripts = ['''
-# import sys, os
-# try:
-#     import Tkinter
-# except ImportError:
-#     import tkinter as Tkinter
-# if sys.platform != "darwin" and "DISPLAY" in os.environ:
-#     Tkinter.Tk()
-# ''',
-#                         '''
-# import sqlite3
-# import distutils.version
-# # Ensure we haven't inadvertently got the (ancient) system SQLite
-# assert distutils.version.LooseVersion('3.7.4') <= distutils.version.LooseVersion(sqlite3.sqlite_version)
-# sqlite3.connect(":memory:")
-# ''',
-#                         ]
-
-#         for s in test_scripts:
-#             tempd = tempfile.mkdtemp()
-#             try:
-#                 tempf = os.path.join(tempd, 'test.py')
-#                 with open(tempf, 'w') as f:
-#                     f.write(s)
-#                 subprocess.check_call(
-#                     ' '.join([python_exe, tempf]), shell=True)
-#             finally:
-#                 shutil.rmtree(tempd)
-
-######################################################################
 
 class ApswPackage(Package):
     name = 'apsw'
-    version = '3.31.1-r1'
+    version = '3.34.0'
+    fullversion = '3.34.0-r1'
 
     @property
     def source_archives(self):
         return {
-            f'{self.name}-{self.version}.zip': f'https://github.com/rogerbinns/apsw/releases/download/{self.version}/{self.name}-{self.version}.zip'
+            f'{self.name}-{self.fullversion}.zip': f'https://github.com/rogerbinns/apsw/releases/download/{self.fullversion}/{self.name}-{self.fullversion}.zip'
         }
 
 
@@ -712,6 +714,7 @@ def main():
         TkPackage().build()
         ToglPackage().build()
         JpegPackage().build()
+        TiffPackage().build()
         DbPackage().build()
         # The items above must be installed before python
     ConquestPythonPackage().build()
@@ -731,13 +734,14 @@ def main():
         'pytest-xdist==1.34.0',
         'pytest-instafail==0.4.2',
         'pytest-cov==2.10.1',
-        )
+    )
     # Apply kludge based on https://stackoverflow.com/questions/63475461/unable-to-import-opengl-gl-in-python-on-macos
     # to support macos 11
     # Hopefully, they won't change the path until we replace conquest :)
     if Package().macos:
         ConquestPythonPackage().patch(
-            ConquestPythonPackage().python_base_directory / 'lib' / 'python2.7' / 'site-packages' / 'OpenGL' / 'platform' / 'ctypesloader.py',
+            ConquestPythonPackage().python_base_directory / 'lib' / 'python2.7' /
+            'site-packages' / 'OpenGL' / 'platform' / 'ctypesloader.py',
             ('fullName = util.find_library( name )',
                 "fullName = '/System/Library/Frameworks/OpenGL.framework/OpenGL'"),
         )
@@ -751,31 +755,38 @@ def main():
                                             f'--install-option=--lflags=-L{ConquestPythonPackage().python_base_directory}/lib',
                                             env=bdb_env)
         ConquestPythonPackage().pip_install(
-            'https://github.com/rogerbinns/apsw/releases/download/3.31.1-r1/apsw-3.31.1-r1.zip',
-            '--global-option=fetch', '--global-option=--version', '--global-option=3.31.1', '--global-option=--all',
+            f'https://github.com/rogerbinns/apsw/releases/download/{ ApswPackage().fullversion }/apsw-{ ApswPackage().fullversion }.zip',
+            '--global-option=fetch', '--global-option=--version', f'--global-option={ ApswPackage().version }', '--global-option=--all',
             '--global-option=build', '--global-option=--enable-all-extensions'
         )
     else:
         # install apsw
-        site_packages_dir = ConquestPythonPackage().install_directory / 'Lib' / 'site-packages'
-        apsw_installer= ApswPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
-        tmpdir=Path('apswtmp')
-        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
+        site_packages_dir = ConquestPythonPackage().install_directory / \
+            'Lib' / 'site-packages'
+        apsw_installer = ApswPackage().source_downloads_base / 'conquest-windows-build-requirements' / \
+            f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
+        tmpdir = Path('apswtmp')
+        ConquestPythonPackage().system(
+            ['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
         files = os.listdir(tmpdir / 'PLATLIB')
         for f in files:
             shutil.move(str(tmpdir / 'PLATLIB' / f), str(site_packages_dir))
         # install precompiled Togl
         tk85_dir = ConquestPythonPackage().install_directory / 'tcl' / 'tk8.5'
-        togl_zip= ToglPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'Togl-2.2-pre.zip'
-        ConquestPythonPackage().system(['7z', 'x', '-aoa', f'-o{tk85_dir}', f'{togl_zip}'])
+        togl_zip = ToglPackage().source_downloads_base / \
+            'conquest-windows-build-requirements' / f'Togl-2.2-pre.zip'
+        ConquestPythonPackage().system(
+            ['7z', 'x', '-aoa', f'-o{tk85_dir}', f'{togl_zip}'])
 
         # install precompiled bsddb3
-        precompiled_bsddb3 = DbPackage().source_downloads_base / 'conquest-windows-build-requirements' / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
+        precompiled_bsddb3 = DbPackage().source_downloads_base / \
+            'conquest-windows-build-requirements' / f'bsddb3-6.2.6-cp27-cp27m-win_amd64.whl'
         ConquestPythonPackage().pip_install(str(precompiled_bsddb3))
 
         # install precompiled pywin32
         ConquestPythonPackage().pip_install('pywin32==225')
 
+    ConquestPythonPackage().smoke_test()
     ConquestPythonPackage().create_archive()
 
 
