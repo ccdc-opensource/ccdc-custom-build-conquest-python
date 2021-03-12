@@ -330,6 +330,8 @@ class Package(object):
             env['CXXFLAGS'] = ' '.join(self.cxxflags)
         if self.ldflags:
             env['LDFLAGS'] = ' '.join(self.ldflags)
+        if self.macos:
+            env['MACOSX_DEPLOYMENT_TARGET'] = self.macos_deployment_target
         return env
 
     def run_configuration_script(self):
