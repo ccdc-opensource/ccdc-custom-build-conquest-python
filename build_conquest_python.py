@@ -173,7 +173,7 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     def source_archives(self):
         return {
             # Canonica would be https://prdownloads.sourceforge.net/tcl but it's fetching truncated files
-            f'tcl{self.version}-src.tar.gz': f'https://kumisystems.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tcl{self.version}-src.tar.gz'
+            f'tcl{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tcl{self.version}-src.tar.gz'
         }
 
     def extract_source_archives(self):
@@ -304,7 +304,7 @@ class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
         return {
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
             # How lovely to have a different tcl and tk version....
-            f'tk{self.version}-src.tar.gz': f'https://kumisystems.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
+            f'tk{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
         }
 
     @property
