@@ -30,6 +30,14 @@ jobs:
     steps:
       - task: CmdLine@2
         inputs:
+          script: "sudo apt-get -y update"
+        displayName: "Apt update"
+      - task: CmdLine@2
+        inputs:
+          script: "sudo apt-get -y upgrade"
+        displayName: "Apt upgrade"
+      - task: CmdLine@2
+        inputs:
           script: "sudo apt-get -y install libgl1-mesa-dev libxmuu-dev libx11-dev libxft-dev wget"
         displayName: "Add prerequisites"
       - task: CmdLine@2
