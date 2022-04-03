@@ -10,6 +10,7 @@ import multiprocessing
 import getpass
 from pathlib import Path
 from distutils.version import StrictVersion
+from platform import processor
 
 
 class Package(object):
@@ -57,9 +58,9 @@ class Package(object):
     @property
     def platform(self):
         if not self.use_distribution_in_base_name:
-            return sys.platform
+            return sys.platform + ('-arm' if processor() == "arm" else "")
         if not self.linux:
-            return sys.platform
+            return sys.platform + ('-arm' if processor() == "arm" else "")
         if self.centos:
             return f'centos{self.centos_major_version}'
         if self.ubuntu:
@@ -77,7 +78,7 @@ class Package(object):
     @property
     def macos_deployment_target(self):
         '''The minimum macos version the pagkage will work on'''
-        return '10.12'
+        return '10.15'
 
     def prepare_directories(self):
         if not self.toolbase.exists() and not self.windows:
@@ -202,7 +203,14 @@ class Package(object):
                     f'Skipping download of existing {self.source_downloads_base / filename}')
                 continue
             print(f'Fetching {url} to {self.source_downloads_base / filename}')
-            with urllib.request.urlopen(url) as response:
+            req = urllib.request.Request(
+                url,
+                data=None, 
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+                }
+            )
+            with urllib.request.urlopen(req) as response:
                 with open(self.source_downloads_base / filename, 'wb') as final_file:
                     shutil.copyfileobj(response, final_file)
 
@@ -291,10 +299,14 @@ class Package(object):
         ]
         if self.macos:
             flags.extend([
-                '-arch', 'x86_64',
                 '-isysroot', self.macos_sdkroot,
                 f'-mmacosx-version-min={self.macos_deployment_target}',
             ])
+            if processor() == "arm":
+                flags.extend(['-arch', 'arm64',])
+            else:
+                flags.extend(['-arch', 'x86_64',])
+
         return flags
 
     @property
@@ -302,10 +314,13 @@ class Package(object):
         flags = []
         if self.macos:
             flags.extend([
-                '-arch', 'x86_64',
                 '-isysroot', self.macos_sdkroot,
                 f'-mmacosx-version-min={self.macos_deployment_target}',
             ])
+            if processor() == "arm":
+                flags.extend(['-arch', 'arm64',])
+            else:
+                flags.extend(['-arch', 'x86_64',])
         return flags
 
     @property
@@ -315,10 +330,13 @@ class Package(object):
         ]
         if self.macos:
             flags.extend([
-                '-arch', 'x86_64',
                 '-isysroot', self.macos_sdkroot,
                 f'-mmacosx-version-min={self.macos_deployment_target}',
             ])
+            if processor() == "arm":
+                flags.extend(['-arch', 'arm64',])
+            else:
+                flags.extend(['-arch', 'x86_64',])
         return flags
 
     @property

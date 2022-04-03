@@ -9,7 +9,7 @@ import multiprocessing
 
 from pathlib import Path
 from ccdc.thirdparty.package import Package, AutoconfMixin, MakeInstallMixin, NoArchiveMixin, CMakeMixin
-
+from platform import platform, processor
 
 class InstallInConquestPythonBaseMixin(object):
     @property
@@ -26,20 +26,20 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
     @property
     def source_archives(self):
         return {
-            f'zlib-{self.version}.tar.xz': f'https://www.zlib.net/zlib-{self.version}.tar.xz'
+            f'zlib-{self.version}.tar.gz': f'https://downloads.sourceforge.net/project/libpng/zlib/{self.version}/zlib-{self.version}.tar.gz'
         }
 
 
 class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''SQLite'''
     name = 'sqlite'
-    version = '3.34.0'
-    tarversion = '3340000'
+    version = '3.38.2'
+    tarversion = '3380200'
 
     @property
     def source_archives(self):
         return {
-            f'sqlite-autoconf-{self.tarversion}.tar.gz': f'https://www.sqlite.org/2020/sqlite-autoconf-{self.tarversion}.tar.gz'
+            f'sqlite-autoconf-{self.tarversion}.tar.gz': f'https://www.sqlite.org/2022/sqlite-autoconf-{self.tarversion}.tar.gz'
         }
 
     @property
@@ -85,7 +85,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
     more details were pilfered from Python.org's installer creation script
     '''
     name = 'openssl'
-    version = '1.1.1i'
+    version = '1.1.1n'
 
     @property
     def source_archives(self):
@@ -107,7 +107,10 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
             'no-zlib',
         ]
         if self.macos:
-            args += ['darwin64-x86_64-cc', 'enable-ec_nistp_64_gcc_128']
+            if processor() == "arm":
+                args += ['darwin64-arm64-cc', 'enable-ec_nistp_64_gcc_128']
+            else:
+                args += ['darwin64-x86_64-cc', 'enable-ec_nistp_64_gcc_128']
         else:
             args += ['linux-x86_64', 'enable-ec_nistp_64_gcc_128']
         return args
@@ -498,7 +501,10 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
             # XCode 12 causes a different mutex implementation to be loaded
             # so we impose use of posix mutexes and avoid the presence of 
             # private between pthreads and x86_64
-            args.append('--with-mutex=POSIX/pthreads/x86_64/gcc-assembly')
+            if processor()=="arm":
+                args.append('--with-mutex=POSIX/pthreads/arm64/gcc-assembly')
+            else:
+                args.append('--with-mutex=POSIX/pthreads/x86_64/gcc-assembly')
             args.append('--enable-mutex-support')
             args.append('--enable-posixmutexes')
         return super().arguments_to_configuration_script + args
@@ -511,7 +517,7 @@ class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
     @property
     def source_archives(self):
         return {
-            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9d.tar.gz'
+            f'jpegsrc.v{self.version}.tar.gz': f'http://ijg.org/files/jpegsrc.v9d.tar.gz'
         }
 
 
@@ -549,6 +555,15 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
         }
 
     def patch_sources(self):
+        patchesdir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "patches")
+        if (self.macos):
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0001-Detect-arm64-in-configure.patch; popd")
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0002-Fix-macOS-_tkinter-use-of-Tck-Tk-in-Library-Framewor.patch; popd")
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0003-Support-arm64-in-Mac-Tools-pythonw.patch; popd")
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0004-Use-system-libffi-for-Mac-OS-10.15-and-up.patch; popd")
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0005-ctypes-use-the-correct-ABI-for-variadic-functions.patch; popd")
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0006-ctypes-probe-libffi-for-ffi_closure_alloc-and-ffi_pr.patch; popd")
+            os.system(f"pushd {self.main_source_directory_path}; patch -p1 < {patchesdir}/0007-Remove-QuickTime-from-link-args.patch; popd")
         self.patch(
             self.main_source_directory_path / 'setup.py',
             ('/usr/contrib/ssl/include/',
@@ -556,6 +571,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
             ('/usr/contrib/ssl/lib/',
                 f'{OpensslPackage().install_directory}/lib'),
         )
+
 
     @property
     def main_source_directory_path(self):
