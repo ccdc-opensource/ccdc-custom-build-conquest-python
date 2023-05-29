@@ -50,8 +50,8 @@ jobs:
         displayName: "Install cmake"
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: "3.9"
-        displayName: "Use latest python 3.9"
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
 
@@ -63,8 +63,8 @@ jobs:
     steps:
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: "3.9"
-        displayName: "Use latest python 3.9"
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
 
@@ -98,7 +98,7 @@ jobs:
 
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: "3.9"
-        displayName: "Use latest python 3.9"
+          versionSpec: "3.8"
+        displayName: "Use latest python 3.8"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
