@@ -33,13 +33,13 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
 class SqlitePackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''SQLite'''
     name = 'sqlite'
-    version = '3.40.0'
-    tarversion = '3400000'
+    version = '3.34.0'
+    tarversion = '3340000'
 
     @property
     def source_archives(self):
         return {
-            f'sqlite-autoconf-{self.tarversion}.tar.gz': f'https://www.sqlite.org/2022/sqlite-autoconf-{self.tarversion}.tar.gz'
+            f'sqlite-autoconf-{self.tarversion}.tar.gz': f'https://www.sqlite.org/2020/sqlite-autoconf-{self.tarversion}.tar.gz'
         }
 
     @property
@@ -85,7 +85,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
     more details were pilfered from Python.org's installer creation script
     '''
     name = 'openssl'
-    version = '1.1.1t'
+    version = '1.1.1i'
 
     @property
     def source_archives(self):
@@ -166,7 +166,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
 
 class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
-    version = '8.6.13'
+    version = '8.6.11'
     tclversion = '8.6'
 
     @property
@@ -180,16 +180,16 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
         super().extract_source_archives()
         # Remove packages we don't want to build
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'sqlite3.40.0')
-        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.5')
+                      'pkgs' / 'sqlite3.34.0')
+        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcmysql1.1.5')
+                      'pkgs' / 'tdbcmysql1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcodbc1.1.5')
+                      'pkgs' / 'tdbcodbc1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcpostgres1.1.5')
+                      'pkgs' / 'tdbcpostgres1.1.2')
         shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcsqlite3-1.1.5')
+                      'pkgs' / 'tdbcsqlite3-1.1.2')
 
     @property
     def main_source_directory_path(self):
@@ -297,14 +297,14 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
 
 class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tk'
-    version = '8.6.13'
+    version = '8.6.11'
 
     @property
     def source_archives(self):
         return {
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
             # How lovely to have a different tcl and tk version....
-            f'tk{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}-src.tar.gz'
+            f'tk{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
         }
 
     @property
@@ -536,7 +536,7 @@ class TiffPackage(InstallInConquestPythonBaseMixin, CMakeMixin, NoArchiveMixin, 
 
 class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     name = 'conquest_python'
-    version = '3.9.9'
+    version = '2.7.18'
 
     def __init__(self):
         self.use_vs_version_in_base_name = False
@@ -642,7 +642,7 @@ class ConquestPythonPackage(AutoconfMixin, MakeInstallMixin, Package):
     def python_base_directory(self):
         '''On MacOS, we must use what goes inside the framework as a base directory'''
         if self.macos:
-            return self.install_directory / 'Library' / 'Frameworks' / 'Python.framework' / 'Versions' / '3.9'
+            return self.install_directory / 'Library' / 'Frameworks' / 'Python.framework' / 'Versions' / '2.7'
         return self.install_directory
 
     @property
@@ -764,7 +764,7 @@ def main():
         site_packages_dir = ConquestPythonPackage().install_directory / \
             'Lib' / 'site-packages'
         apsw_installer = ApswPackage().source_downloads_base / 'conquest-windows-build-requirements' / \
-            f'apsw-{ApswPackage().version}.win-amd64-py9.9.exe'
+            f'apsw-{ApswPackage().version}.win-amd64-py2.7.exe'
         tmpdir = Path('apswtmp')
         ConquestPythonPackage().system(
             ['7z', 'x', '-aoa', f'-o{tmpdir}', f'{apsw_installer}'])
