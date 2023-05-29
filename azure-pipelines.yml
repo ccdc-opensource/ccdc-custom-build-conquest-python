@@ -13,11 +13,11 @@ jobs:
         displayName: "Add prerequisites"
       - task: CmdLine@2
         inputs:
-          script: "wget -O /tmp/cmake-3.26.4-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.26/cmake-3.26.4-linux-x86_64.sh'"
+          script: "wget -O /tmp/cmake-3.17.1-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.17/cmake-3.17.1-Linux-x86_64.sh'"
         displayName: "Fetch cmake"
       - task: CmdLine@2
         inputs:
-          script: "sudo bash /tmp/cmake-3.26.4-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
+          script: "sudo bash /tmp/cmake-3.17.1-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
         displayName: "Install cmake"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
@@ -42,11 +42,11 @@ jobs:
         displayName: "Add prerequisites"
       - task: CmdLine@2
         inputs:
-          script: "wget -O /tmp/cmake-3.26.4-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.26/cmake-3.26.4-linux-x86_64.sh'"
+          script: "wget -O /tmp/cmake-3.17.1-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.17/cmake-3.17.1-Linux-x86_64.sh'"
         displayName: "Fetch cmake"
       - task: CmdLine@2
         inputs:
-          script: "sudo bash /tmp/cmake-3.26.4-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
+          script: "sudo bash /tmp/cmake-3.17.1-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
         displayName: "Install cmake"
       - task: UsePythonVersion@0
         inputs:
