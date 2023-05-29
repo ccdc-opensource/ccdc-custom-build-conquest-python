@@ -46,8 +46,8 @@ steps:
       {
         "files": [
           {
-            "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
-            "target": "ccdc-3rdparty-python-interpreters"
+            "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*tar.gz",
+            "target": "ccdc-3rdparty-python-interpreters/conquest_python/$(PythonVersion)/"
           }
         ]
       }

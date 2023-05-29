@@ -13,7 +13,7 @@ jobs:
         displayName: "Add prerequisites"
       - task: CmdLine@2
         inputs:
-          script: "wget -O /tmp/cmake-3.26.4-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.26/cmake-3.26.4-Linux-x86_64.sh'"
+          script: "wget -O /tmp/cmake-3.26.4-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.26/cmake-3.26.4-linux-x86_64.sh'"
         displayName: "Fetch cmake"
       - task: CmdLine@2
         inputs:
@@ -42,7 +42,7 @@ jobs:
         displayName: "Add prerequisites"
       - task: CmdLine@2
         inputs:
-          script: "wget -O /tmp/cmake-3.26.4-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.26/cmake-3.26.4-Linux-x86_64.sh'"
+          script: "wget -O /tmp/cmake-3.26.4-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.26/cmake-3.26.4-linux-x86_64.sh'"
         displayName: "Fetch cmake"
       - task: CmdLine@2
         inputs:
@@ -50,8 +50,8 @@ jobs:
         displayName: "Install cmake"
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: "3.8"
-        displayName: "Use latest python 3.8"
+          versionSpec: "3.9"
+        displayName: "Use latest python 3.9"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
 
@@ -63,8 +63,8 @@ jobs:
     steps:
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: "3.8"
-        displayName: "Use latest python 3.8"
+          versionSpec: "3.9"
+        displayName: "Use latest python 3.9"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
 
@@ -98,7 +98,7 @@ jobs:
 
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: "3.8"
-        displayName: "Use latest python 3.8"
+          versionSpec: "3.9"
+        displayName: "Use latest python 3.9"
       # No need to setup specific python, the container's python3 will be used
       - template: common-tasks.yml
