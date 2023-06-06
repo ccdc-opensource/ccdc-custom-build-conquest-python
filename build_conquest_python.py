@@ -21,7 +21,7 @@ class InstallInConquestPythonBaseMixin(object):
 class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''Zlib'''
     name = 'zlib'
-    version = '1.2.11'
+    version = '1.2.13'
 
     @property
     def source_archives(self):
@@ -506,12 +506,12 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
 
 class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     name = 'jpeg'
-    version = '9d'
+    version = '9e'
 
     @property
     def source_archives(self):
         return {
-            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9d.tar.gz'
+            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9e.tar.gz'
         }
 
 

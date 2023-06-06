@@ -25,6 +25,19 @@ steps:
     buildNumber: '$(Build.BuildNumber)-$(artifactory.platformName)'
   displayName: 'Collect issues'
 
+- powershell: |
+    $filename = Get-ChildItem -Path $(Build.ArtifactStagingDirectory) -Filter *.tar.gz | Select-Object -ExpandProperty Name
+    Write-Host "Filename: $filename"
+    if ($filename -match "conquest_python-([0-9]+\.[0-9]+)") {
+      $PythonVersion = $Matches[1]
+      Write-Host "Python version: $PythonVersion"
+      Write-Host "##vso[task.setvariable variable=PythonVersion]$PythonVersion"
+    }
+    else {
+      Write-Error "Unable to extract Python version from filename"
+    }
+  displayName: 'Extract Python version'
+
 - task: ArtifactoryGenericUpload@2
   inputs:
     artifactoryService: 'devops-ccdc-3rd-party'
@@ -33,8 +46,8 @@ steps:
       {
         "files": [
           {
-            "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*",
-            "target": "ccdc-3rdparty-python-interpreters"
+            "pattern": "$(Build.ArtifactStagingDirectory)/conquest_python*tar.gz",
+            "target": "ccdc-3rdparty-python-interpreters/conquest_python/$(PythonVersion)/"
           }
         ]
       }

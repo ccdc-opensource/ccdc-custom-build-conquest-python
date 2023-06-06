@@ -13,20 +13,28 @@ jobs:
         displayName: "Add prerequisites"
       - task: CmdLine@2
         inputs:
+          script: "curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo"
+        displayName: "Add Microsoft repository"      
+      - task: CmdLine@2
+        inputs:
+          script: "sudo yum install -y powershell"
+        displayName: "Install PowerShell"      
+      - task: CmdLine@2
+        inputs:
           script: "wget -O /tmp/cmake-3.17.1-Linux-x86_64.sh --no-check-certificate --quiet 'https://cmake.org/files/v3.17/cmake-3.17.1-Linux-x86_64.sh'"
         displayName: "Fetch cmake"
       - task: CmdLine@2
         inputs:
           script: "sudo bash /tmp/cmake-3.17.1-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir"
         displayName: "Install cmake"
-      # No need to setup specific python, the container's python3 will be used
+      # No need to setup specific python, the container's python3 will be used 
       - template: common-tasks.yml
 
-  - job: Ubuntu1804
+  - job: Ubuntu
     pool:
-      vmImage: "ubuntu-18.04"
+      vmImage: "ubuntu-22.04"
     variables:
-      artifactory.platformName: "ubuntu18.04"
+      artifactory.platformName: "ubuntu22.04"
     steps:
       - task: CmdLine@2
         inputs:
@@ -57,7 +65,7 @@ jobs:
 
   - job: macOS
     pool:
-      vmImage: "macOS-10.14"
+      vmImage: "macOS-11"
     variables:
       artifactory.platformName: "darwin"
     steps:
