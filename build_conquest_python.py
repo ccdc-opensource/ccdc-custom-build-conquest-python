@@ -21,7 +21,7 @@ class InstallInConquestPythonBaseMixin(object):
 class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     '''Zlib'''
     name = 'zlib'
-    version = '1.2.13'
+    version = '1.3.1'
 
     @property
     def source_archives(self):
