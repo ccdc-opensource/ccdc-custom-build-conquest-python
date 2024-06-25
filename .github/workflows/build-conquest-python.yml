@@ -21,6 +21,7 @@ on:  # yamllint disable-line rule:truthy
     files:
       - '.github/workflows/build-conquest-python.yml'
       - 'build_conquest_python.py'
+      - 'ccdc/thirdparty/package.py'
 
 jobs:
   setup:
