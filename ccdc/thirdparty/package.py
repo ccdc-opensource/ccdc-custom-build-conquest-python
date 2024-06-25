@@ -56,6 +56,8 @@ class Package(object):
 
     @property
     def platform(self):
+        if sys.platform.startswith('linux'):
+            return 'linux'
         if not self.use_distribution_in_base_name:
             return sys.platform
         if not self.linux:
@@ -138,8 +140,8 @@ class Package(object):
             self.name,
             self.version,
         ]
-        if 'BUILD_BUILDNUMBER' in os.environ:
-            components.append(os.environ['BUILD_BUILDNUMBER'])
+        if 'GITHUB_RUN_NUMBER' in os.environ:
+            components.append(os.environ['GITHUB_RUN_NUMBER'])
         else:
             components.append('do-not-use-me-developer-version')
         components.append(self.platform)
