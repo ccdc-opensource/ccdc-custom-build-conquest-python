@@ -56,6 +56,8 @@ class Package(object):
 
     @property
     def platform(self):
+        if sys.platform.startswith('linux'):
+            return 'linux'
         if not self.use_distribution_in_base_name:
             return sys.platform
         if not self.linux:
