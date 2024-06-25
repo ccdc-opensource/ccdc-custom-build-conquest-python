@@ -511,7 +511,7 @@ class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
     @property
     def source_archives(self):
         return {
-            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9e.tar.gz'
+            f'jpegsrc.v{self.version}.tar.gz': 'https://www.ijg.org/files/jpegsrc.v9e.tar.gz'
         }
 
 
