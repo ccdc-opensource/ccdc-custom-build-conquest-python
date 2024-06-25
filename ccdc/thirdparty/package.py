@@ -138,8 +138,8 @@ class Package(object):
             self.name,
             self.version,
         ]
-        if 'BUILD_BUILDNUMBER' in os.environ:
-            components.append(os.environ['BUILD_BUILDNUMBER'])
+        if 'GITHUB_RUN_NUMBER' in os.environ:
+            components.append(os.environ['GITHUB_RUN_NUMBER'])
         else:
             components.append('do-not-use-me-developer-version')
         components.append(self.platform)
