@@ -306,9 +306,8 @@ class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
         return {
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
             # How lovely to have a different tcl and tk version....
-            f'tk{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
-            # This works for 8.6.16: https://sourceforge.net/projects/tcl/files/Tcl/8.6.16/tk8.6.16-src.tar.gz/download,
-            # so we can try this if the above fails
+            # The url is a bit of a mess, but it's the only one that works?
+            f'tk{self.version}-src.tar.gz': f'https://sourceforge.net/projects/tcl/files/Tcl/${self.version}/tk{self.version}-src.tar.gz/download'
         }
 
     @property
