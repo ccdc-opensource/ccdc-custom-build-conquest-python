@@ -297,7 +297,7 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
 
 class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tk'
-    version = '8.6.11'
+    version = '8.6.16'
 
     @property
     def source_archives(self):
@@ -305,6 +305,8 @@ class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
             # How lovely to have a different tcl and tk version....
             f'tk{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
+            # This works for 8.6.16: https://sourceforge.net/projects/tcl/files/Tcl/8.6.16/tk8.6.16-src.tar.gz/download,
+            # so we can try this if the above fails
         }
 
     @property
