@@ -26,7 +26,9 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
     @property
     def source_archives(self):
         return {
-            f'zlib-{self.version}.tar.xz': f'https://www.zlib.net/zlib-{self.version}.tar.xz'
+            # older version of zlib no longer available on zlib.net,
+            # so get it directly from Mark Adler's github repo
+            f'zlib-{self.version}.tar.xz': f'https://github.com/madler/zlib/releases/download/v{self.version}/zlib-{self.version}.tar.xz'
         }
 
 
