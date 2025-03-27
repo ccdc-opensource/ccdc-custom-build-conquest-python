@@ -6,24 +6,25 @@ steps:
     scriptPath: build_conquest_python.py
   displayName: 'install conquest_python'
 
-# Upload artifactory build info
-- task: ArtifactoryCollectIssues@1
-  inputs:
-    artifactoryService: 'devops-ccdc-3rd-party'
-    configSource: 'taskConfiguration'
-    taskConfig: |
-      version: 1
-      issues:
-        trackerName: JIRA
-        regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?'
-        keyGroupIndex: 3
-        summaryGroupIndex: 1
-        trackerUrl: https://jira.ccdc.cam.ac.uk/issues
-        aggregate: true
-        aggregationStatus: RELEASED
-    buildName: '$(Build.DefinitionName)'
-    buildNumber: '$(Build.BuildNumber)-$(artifactory.platformName)'
-  displayName: 'Collect issues'
+#### The new artifactory doesn't support sorting, so we can't do this task for now
+## Upload artifactory build info
+#- task: ArtifactoryCollectIssues@1
+#  inputs:
+#    artifactoryService: 'devops-ccdc-3rd-party'
+#    configSource: 'taskConfiguration'
+#    taskConfig: |
+#      version: 1
+#      issues:
+#        trackerName: JIRA
+#        regexp: '(.*?)\b\(?(Jira|JIRA|jira)?\s+([A-Za-z]{2,5}\d*-\d+)\)?'
+#        keyGroupIndex: 3
+#        summaryGroupIndex: 1
+#        trackerUrl: https://jira.ccdc.cam.ac.uk/issues
+#        aggregate: true
+#        aggregationStatus: RELEASED
+#    buildName: '$(Build.DefinitionName)'
+#    buildNumber: '$(Build.BuildNumber)-$(artifactory.platformName)'
+#  displayName: 'Collect issues'
 
 - powershell: |
     $filename = Get-ChildItem -Path $(Build.ArtifactStagingDirectory) -Filter *.tar.gz | Select-Object -ExpandProperty Name
