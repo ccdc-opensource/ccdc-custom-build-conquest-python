@@ -507,12 +507,12 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
 
 class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     name = 'jpeg'
-    version = '9e'
+    version = '9f'
 
     @property
     def source_archives(self):
         return {
-            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9e.tar.gz'
+            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v{self.version}.tar.gz'
         }
 
 
