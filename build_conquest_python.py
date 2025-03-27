@@ -168,7 +168,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
 
 class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
-    version = '8.6.11'
+    version = '8.6.16'
     tclversion = '8.6'
 
     @property
@@ -307,7 +307,7 @@ class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
             # How lovely to have a different tcl and tk version....
             # The url is a bit of a mess, but it's the only one that works?
-            f'tk{self.version}-src.tar.gz': f'https://sourceforge.net/projects/tcl/files/Tcl/${self.version}/tk{self.version}-src.tar.gz/download'
+            f'tk{self.version}-src.tar.gz': f'https://sourceforge.net/projects/tcl/files/Tcl/{self.version}/tk{self.version}-src.tar.gz/download'
         }
 
     @property
