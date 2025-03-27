@@ -181,14 +181,14 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     def extract_source_archives(self):
         super().extract_source_archives()
         # Remove packages we don't want to build
-        sp = Path(self.main_source_directory_path /'pkgs' )
+        sp = Path(self.main_source_directory_path /'pkgs')
         
         sqlite_path = sp.glob('sqlite*')
         for file in sqlite_path:
             shutil.rmtree(file)
 
         tbc_path = sp.glob('tdbc*')
-        for file in tbc_pathh:
+        for file in tbc_path:
             shutil.rmtree(file)
 
     @property
