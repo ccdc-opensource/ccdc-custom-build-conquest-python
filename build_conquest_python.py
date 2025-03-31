@@ -721,7 +721,7 @@ def main():
     ConquestPythonPackage().build()
     ConquestPythonPackage().ensure_pip()
     ConquestPythonPackage().pip_install(
-        'Pmw==2.0.1',
+        'Pmw==2.1.1',
         'numpy==1.16.6',
         'PyInstaller==3.5',
         'PyOpenGL==3.1.0',
