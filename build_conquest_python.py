@@ -707,6 +707,17 @@ def main():
     except OSError:
         pass
 
+    if Package().linux:
+        subprocess.run('sudo dnf update -y ', shell=True, check=True)
+        #subprocess.run("sudo dnf install -y 'dnf-command(config-manager)'", shell=True, check=True)
+        #subprocess.run('sudo dnf config-manager --enable powertools', shell=True, check=True)
+        #subprocess.run('sudo dnf install -y epel-release', shell=True, check=True)
+        subprocess.run(
+                'sudo dnf install -y libXmu-devel',
+                shell=True,
+                check=True
+                )
+
     if not Package().windows:
         ZlibPackage().build()
         SqlitePackage().build()
