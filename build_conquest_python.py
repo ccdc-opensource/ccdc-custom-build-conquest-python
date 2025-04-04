@@ -26,7 +26,9 @@ class ZlibPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixi
     @property
     def source_archives(self):
         return {
-            f'zlib-{self.version}.tar.xz': f'https://www.zlib.net/zlib-{self.version}.tar.xz'
+            # older version of zlib no longer available on zlib.net,
+            # so get it directly from Mark Adler's github repo
+            f'zlib-{self.version}.tar.xz': f'https://github.com/madler/zlib/releases/download/v{self.version}/zlib-{self.version}.tar.xz'
         }
 
 
@@ -166,7 +168,7 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
 
 class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
-    version = '8.6.11'
+    version = '8.6.16'
     tclversion = '8.6'
 
     @property
@@ -179,17 +181,15 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     def extract_source_archives(self):
         super().extract_source_archives()
         # Remove packages we don't want to build
-        shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'sqlite3.34.0')
-        shutil.rmtree(self.main_source_directory_path / 'pkgs' / 'tdbc1.1.2')
-        shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcmysql1.1.2')
-        shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcodbc1.1.2')
-        shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcpostgres1.1.2')
-        shutil.rmtree(self.main_source_directory_path /
-                      'pkgs' / 'tdbcsqlite3-1.1.2')
+        sp = Path(self.main_source_directory_path / 'pkgs')
+
+        sqlite_path = sp.glob('sqlite*')
+        for file in sqlite_path:
+            shutil.rmtree(file)
+
+        tbc_path = sp.glob('tdbc*')
+        for file in tbc_path:
+            shutil.rmtree(file)
 
     @property
     def main_source_directory_path(self):
@@ -297,14 +297,15 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
 
 class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tk'
-    version = '8.6.11'
+    version = '8.6.16'
 
     @property
     def source_archives(self):
         return {
             # Canonical would be https://prdownloads.sourceforge.net/tcl/ but it's fetching garbage
             # How lovely to have a different tcl and tk version....
-            f'tk{self.version}-src.tar.gz': f'https://freefr.dl.sourceforge.net/project/tcl/Tcl/{self.version}/tk{self.version}.1-src.tar.gz'
+            # The url is a bit of a mess, but it's the only one that works?
+            f'tk{self.version}-src.tar.gz': f'https://sourceforge.net/projects/tcl/files/Tcl/{self.version}/tk{self.version}-src.tar.gz/download'
         }
 
     @property
@@ -506,12 +507,12 @@ class DbPackage(InstallInConquestPythonBaseMixin, MakeInstallMixin, NoArchiveMix
 
 class JpegPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveMixin, Package):
     name = 'jpeg'
-    version = '9e'
+    version = '9f'
 
     @property
     def source_archives(self):
         return {
-            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v9e.tar.gz'
+            f'jpegsrc.v{self.version}.tar.gz': f'https://fossies.org/linux/misc/jpegsrc.v{self.version}.tar.gz'
         }
 
 
@@ -720,7 +721,7 @@ def main():
     ConquestPythonPackage().build()
     ConquestPythonPackage().ensure_pip()
     ConquestPythonPackage().pip_install(
-        'Pmw==2.0.1',
+        'Pmw==2.1.1',
         'numpy==1.16.6',
         'PyInstaller==3.5',
         'PyOpenGL==3.1.0',
