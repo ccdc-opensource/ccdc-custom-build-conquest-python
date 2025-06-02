@@ -761,8 +761,9 @@ def main():
     # Patch Pyinstaller to fix https://github.com/pyinstaller/pyinstaller/issues/5540
     # The actual fix for this isn't in any of the 3.x versions, and 4.x onwards require Python 3 :(
     if Package().linux:
-        command = ["patch", "-i", os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyinstaller.patch")]
-        package_path = ConquestPythonPackage().python_base_directory / 'lib' / 'python2.7' / 'site-packages'
+        command = ["patch", "-p1", "-i", os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyinstaller.patch")]
+        print(f"Applying patch with {' '.join(command)}")
+        package_path = ConquestPythonPackage().python_base_directory / "lib" / "python2.7" / "site-packages"
         subprocess.run(command, cwd=package_path)
 
     if not Package().windows:
