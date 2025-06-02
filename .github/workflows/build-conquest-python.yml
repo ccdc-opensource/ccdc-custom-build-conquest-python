@@ -51,11 +51,6 @@ jobs:
             echo python=python >> $GITHUB_OUTPUT
           fi
 
-          # Build the conquest python for rocky8
-          echo runson=ubuntu-latest >> $GITHUB_OUTPUT
-          echo container=ccdcrepository.azurecr.io/conan/rocky8-gcc10:latest >> $GITHUB_OUTPUT
-          echo python=python3 >> $GITHUB_OUTPUT
-
   build-upload:
     needs:
       - setup
