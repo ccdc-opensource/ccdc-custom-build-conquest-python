@@ -101,6 +101,7 @@ jobs:
         with:
           retention-days: 1
           path: "${{ env.archive_path }}/${{ env.archive_filename }}"
+          name: ${{ env.archive_filename }}
 
       - name: Set up JFrog CLI
         if: ${{ inputs.artifactory-push }}
