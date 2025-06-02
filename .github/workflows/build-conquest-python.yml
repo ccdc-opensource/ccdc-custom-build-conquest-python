@@ -36,11 +36,7 @@ jobs:
       - name: Set output
         id: set_output
         run: |
-          if [[ "${{ inputs.platforms }}" == "rocky8" ]]; then
-            echo runson=ubuntu-latest >> $GITHUB_OUTPUT
-            echo container=ccdcrepository.azurecr.io/conan/rocky8-gcc10:latest >> $GITHUB_OUTPUT
-            echo python=python3 >> $GITHUB_OUTPUT
-          elif [[ "${{ inputs.platforms }}" == "ubuntu" ]]; then
+          if [[ "${{ inputs.platforms }}" == "ubuntu" ]]; then
             echo runson=ubuntu-latest >> $GITHUB_OUTPUT
             echo python=python3 >> $GITHUB_OUTPUT
           elif [[ "${{ inputs.platforms }}" == "macos" ]]; then
@@ -49,6 +45,11 @@ jobs:
           elif [[ "${{ inputs.platforms }}" == "windows" ]]; then
             echo runson=windows-2019 >> $GITHUB_OUTPUT
             echo python=python >> $GITHUB_OUTPUT
+          else
+            # default to Rocky
+            echo runson=ubuntu-latest >> $GITHUB_OUTPUT
+            echo container=ccdcrepository.azurecr.io/conan/rocky8-gcc10:latest >> $GITHUB_OUTPUT
+            echo python=python3 >> $GITHUB_OUTPUT
           fi
 
   build-upload:
