@@ -36,11 +36,7 @@ jobs:
       - name: Set output
         id: set_output
         run: |
-          if [[ "${{ inputs.platforms }}" == "rocky8" ]]; then
-            echo runson=ubuntu-latest >> $GITHUB_OUTPUT
-            echo container=ccdcrepository.azurecr.io/conan/rocky8-gcc10:latest >> $GITHUB_OUTPUT
-            echo python=python3 >> $GITHUB_OUTPUT
-          elif [[ "${{ inputs.platforms }}" == "ubuntu" ]]; then
+          if [[ "${{ inputs.platforms }}" == "ubuntu" ]]; then
             echo runson=ubuntu-latest >> $GITHUB_OUTPUT
             echo python=python3 >> $GITHUB_OUTPUT
           elif [[ "${{ inputs.platforms }}" == "macos" ]]; then
@@ -49,12 +45,12 @@ jobs:
           elif [[ "${{ inputs.platforms }}" == "windows" ]]; then
             echo runson=windows-2019 >> $GITHUB_OUTPUT
             echo python=python >> $GITHUB_OUTPUT
+          else
+            # default to Rocky
+            echo runson=ubuntu-latest >> $GITHUB_OUTPUT
+            echo container=ccdcrepository.azurecr.io/conan/rocky8-gcc10:latest >> $GITHUB_OUTPUT
+            echo python=python3 >> $GITHUB_OUTPUT
           fi
-
-          # Build the conquest python for rocky8
-          echo runson=ubuntu-latest >> $GITHUB_OUTPUT
-          echo container=ccdcrepository.azurecr.io/conan/rocky8-gcc10:latest >> $GITHUB_OUTPUT
-          echo python=python3 >> $GITHUB_OUTPUT
 
   build-upload:
     needs:
@@ -81,6 +77,16 @@ jobs:
           ${{ needs.setup.outputs.python }} --version
           ${{ needs.setup.outputs.python }} -m pip install --upgrade pip wheel setuptools
 
+      - name: Install patch
+        run: |
+          if [[ "${{ needs.setup.outputs.runson }}" == "ubuntu-latest" ]]; then
+            if [[ -f /etc/rocky-release ]]; then
+              sudo dnf install -y patch
+            else
+              sudo apt update && sudo apt install -y patch
+            fi
+          fi
+
       - name: Build conquest python
         run: |
           output=$(${{ needs.setup.outputs.python }} build_conquest_python.py | grep Creating | tail -n 1)
@@ -88,6 +94,14 @@ jobs:
           archive_path=$(echo $output | awk '{print $NF}')
           echo "archive_filename=$archive_filename" >> $GITHUB_ENV
           echo "archive_path=$archive_path" >> $GITHUB_ENV
+
+      - name: Store conquest python as build artifact
+        if: ${{ !inputs.artifactory-push }}
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          path: "${{ env.archive_path }}/${{ env.archive_filename }}"
+          name: ${{ env.archive_filename }}
 
       - name: Set up JFrog CLI
         if: ${{ inputs.artifactory-push }}
