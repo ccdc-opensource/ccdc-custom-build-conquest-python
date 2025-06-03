@@ -758,6 +758,14 @@ def main():
                 "fullName = '/System/Library/Frameworks/OpenGL.framework/OpenGL'"),
         )
 
+    # Patch Pyinstaller to fix https://github.com/pyinstaller/pyinstaller/issues/5540
+    # The actual fix for this isn't in any of the 3.x versions, and 4.x onwards require Python 3 :(
+    if Package().linux:
+        command = ["patch", "-p1", "-i", os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyinstaller.patch")]
+        print(f"Applying patch with {' '.join(command)}")
+        package_path = ConquestPythonPackage().python_base_directory / "lib" / "python2.7" / "site-packages"
+        subprocess.run(command, cwd=package_path)
+
     if not Package().windows:
         bdb_env = dict(os.environ)
         bdb_env['BERKELEYDB_DIR'] = f'{ConquestPythonPackage().python_base_directory}'
