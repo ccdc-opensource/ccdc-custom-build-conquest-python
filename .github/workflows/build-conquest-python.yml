@@ -9,7 +9,8 @@ on:  # yamllint disable-line rule:truthy
         default: false
         type: boolean
       platforms:
-        description: 'Platform to build for, eg. '
+        description: 'Platform to build for'
+        type: choice
         options:
           - 'rocky8'
           - 'ubuntu'
@@ -94,6 +95,7 @@ jobs:
           archive_path=$(echo $output | awk '{print $NF}')
           echo "archive_filename=$archive_filename" >> $GITHUB_ENV
           echo "archive_path=$archive_path" >> $GITHUB_ENV
+          echo $output
 
       - name: Store conquest python as build artifact
         if: ${{ !inputs.artifactory-push }}
