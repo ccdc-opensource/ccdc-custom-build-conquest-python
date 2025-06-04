@@ -168,8 +168,8 @@ class OpensslPackage(InstallInConquestPythonBaseMixin, AutoconfMixin, NoArchiveM
 
 class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = 'tcl'
-    version = '8.6.16'
-    tclversion = '8.6'
+    version = '9.0.1'
+    tclversion = '9.0'
 
     @property
     def source_archives(self):
