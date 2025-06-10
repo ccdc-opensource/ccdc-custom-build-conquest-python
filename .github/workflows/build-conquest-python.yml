@@ -97,6 +97,13 @@ jobs:
           echo "archive_path=$archive_path" >> $GITHUB_ENV
           echo $output
 
+      - name: Store build logs as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          path: "/opt/ccdc/third-party-sources/logs/*"
+          name: "build_logs.zip"
+
       - name: Store conquest python as build artifact
         if: ${{ !inputs.artifactory-push }}
         uses: actions/upload-artifact@v4
