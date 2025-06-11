@@ -217,8 +217,11 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
     def arguments_to_configuration_script(self):
         args = super().arguments_to_configuration_script + [
             '--enable-shared',
-            '--enable-threads',
+            # '--enable-threads',
             '--enable-64bit',
+            f"LDFLAGS={ConquestPythonPackage().python_base_directory / 'lib'}",
+            f"CFLAGS={ConquestPythonPackage().python_base_directory / 'include'}",
+            f"CPPFLAGS={ConquestPythonPackage().python_base_directory / 'include'}",
         ]
         if self.macos:
             args.extend([
