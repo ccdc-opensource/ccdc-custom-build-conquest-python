@@ -219,9 +219,8 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
             '--enable-shared',
             # '--enable-threads',
             '--enable-64bit',
-            f"LDFLAGS={ConquestPythonPackage().python_base_directory / 'lib'} $LDFLAGS",
-            f"CFLAGS={ConquestPythonPackage().python_base_directory / 'include'} $CFLAGS",
-            f"CPPFLAGS={ConquestPythonPackage().python_base_directory / 'include'} $CPPFLAGS",
+            f"--includedir={ConquestPythonPackage().python_base_directory / 'include'}",
+            f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
         ]
         if self.macos:
             args.extend([
