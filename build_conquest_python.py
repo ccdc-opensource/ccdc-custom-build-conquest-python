@@ -329,7 +329,7 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
 
 class TkPackage(AutoconfMixin, NoArchiveMixin, Package):
     name = "tk"
-    version = "8.6.16"
+    version = "9.0.1"
 
     @property
     def source_archives(self):
