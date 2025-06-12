@@ -225,7 +225,7 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
 
     @property
     def cflags(self):
-        return super().cflags + ["-DNDEBUG"]
+        return super().cflags + ["-DNDEBUG", f"-I{ZlibPackage().include_directories[0]}"]
 
     @property
     def configuration_script(self):
@@ -238,8 +238,6 @@ class TclPackage(AutoconfMixin, NoArchiveMixin, Package):
             # '--enable-threads',
             "--enable-64bit",
             f"--prefix={ConquestPythonPackage().python_base_directory}",
-            # f"--includedir={ConquestPythonPackage().python_base_directory / 'include'}",
-            # f'--libdir={ConquestPythonPackage().python_base_directory / "lib"}',
         ]
         if self.macos:
             args.extend(
