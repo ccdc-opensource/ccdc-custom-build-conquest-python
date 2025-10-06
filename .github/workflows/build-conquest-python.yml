@@ -92,7 +92,7 @@ jobs:
         run: |
           output=$(${{ needs.setup.outputs.python }} build_conquest_python.py | grep Creating | tail -n 1)
           archive_filename=$(echo $output | awk '{print $2}')
-          archive_path=$(echo $output | awk '{print $NF}')
+          archive_path=$(echo $output | awk '{for(i=4;i<=NF;i++) printf "%s%s", $i, (i<NF ? " " : "")}')
           echo "archive_filename=$archive_filename" >> $GITHUB_ENV
           echo "archive_path=$archive_path" >> $GITHUB_ENV
 
