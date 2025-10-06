@@ -90,9 +90,18 @@ jobs:
 
       - name: Build conquest python
         run: |
-          output=$(${{ needs.setup.outputs.python }} build_conquest_python.py | grep Creating | tail -n 1)
+          ${{ needs.setup.outputs.python }} build_conquest_python.py > build_output.log 2>&1
+          cat build_output.log
+          output=$(grep "Creating.*\.tar\.gz.*in" build_output.log | tail -n 1)
+          echo "Parsed output line: $output"
+          if [[ -z "$output" ]]; then
+            echo "Error: No 'Creating' line found in build output"
+            exit 1
+          fi
           archive_filename=$(echo $output | awk '{print $2}')
-          archive_path=$(echo $output | awk '{for(i=4;i<=NF;i++) printf "%s%s", $i, (i<NF ? " " : "")}')
+          archive_path=$(echo $output | sed 's/^Creating .* in //')
+          echo "Parsed filename: $archive_filename"
+          echo "Parsed path: $archive_path"
           echo "archive_filename=$archive_filename" >> $GITHUB_ENV
           echo "archive_path=$archive_path" >> $GITHUB_ENV
 
