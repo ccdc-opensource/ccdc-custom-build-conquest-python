@@ -133,4 +133,5 @@ jobs:
           curl -X POST \
             -H "X-ApiKey: ${PROGET_API_KEY}" \
             --data-binary "@${{ env.archive_path }}/${{ env.archive_filename }}" \
+            --fail-with-body \
             "$PROGET_ENDPOINT"
