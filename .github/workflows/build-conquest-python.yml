@@ -131,15 +131,6 @@ jobs:
           PROGET_ENDPOINT="${PROGET_BASE_URL}/endpoints/${PROGET_ASSET_DIRECTORY}/content/conquest_python/2.7/${{ env.archive_filename }}"
 
           curl -X POST \
-            -H "Content-Type: application/octet-stream" \
             -H "X-ApiKey: ${PROGET_API_KEY}" \
             --data-binary "@${{ env.archive_path }}/${{ env.archive_filename }}" \
-            --fail-with-body \
             "$PROGET_ENDPOINT"
-
-          if [ $? -eq 0 ]; then
-            echo "Successfully uploaded ${{ env.archive_filename }} to ProGet"
-          else
-            echo "Failed to upload ${{ env.archive_filename }} to ProGet"
-            exit 1
-          fi
