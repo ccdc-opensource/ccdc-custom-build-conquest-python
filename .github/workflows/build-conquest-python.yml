@@ -9,7 +9,8 @@ on:  # yamllint disable-line rule:truthy
         default: false
         type: boolean
       platforms:
-        description: 'Platform to build for, eg. '
+        description: "Platform to build for"
+        type: choice
         options:
           - 'rocky8'
           - 'ubuntu'
@@ -67,10 +68,10 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         if: ${{ needs.setup.outputs.python == 'python' }}
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Set up Python environment
         run: |
@@ -118,3 +119,19 @@ jobs:
           jfrog rt upload --flat \
             "${{ env.archive_path }}/${{ env.archive_filename }}" \
             "ccdc-3rdparty-python-interpreters/conquest_python/2.7/"
+
+      - name: Upload conquest python to ProGet
+        if: ${{ inputs.artifactory-push }}
+        shell: bash
+        env:
+          PROGET_API_KEY: ${{ secrets.PROGET_API_KEY }}
+          PROGET_BASE_URL: ${{ vars.PROGET_BASE_URL }}
+          PROGET_ASSET_DIRECTORY: ${{ vars.PROGET_ASSET_DIRECTORY }}
+        run: |
+          PROGET_ENDPOINT="${PROGET_BASE_URL}/endpoints/${PROGET_ASSET_DIRECTORY}/content/conquest_python/2.7/${{ env.archive_filename }}"
+
+          curl -X POST \
+            -H "X-ApiKey: ${PROGET_API_KEY}" \
+            --data-binary "@${{ env.archive_path }}/${{ env.archive_filename }}" \
+            --fail-with-body \
+            "$PROGET_ENDPOINT"
