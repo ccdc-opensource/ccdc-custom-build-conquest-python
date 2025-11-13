@@ -4,8 +4,8 @@ name: Build Conquest Python
 on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
-      artifactory-push:
-        description: "Push result to Artifactory"
+      proget-push:
+        description: "Push result to ProGet"
         default: false
         type: boolean
       platforms:
@@ -97,31 +97,15 @@ jobs:
           echo "archive_path=$archive_path" >> $GITHUB_ENV
 
       - name: Store conquest python as build artifact
-        if: ${{ !inputs.artifactory-push }}
+        if: ${{ !inputs.proget-push }}
         uses: actions/upload-artifact@v5
         with:
           retention-days: 1
           path: "${{ env.archive_path }}/${{ env.archive_filename }}"
           name: ${{ env.archive_filename }}
 
-      - name: Set up JFrog CLI
-        if: ${{ inputs.artifactory-push }}
-        uses: jfrog/setup-jfrog-cli@v4
-        env:
-          JF_ENV_1: ${{ secrets.ARTIFACTORY_GH_CCDC_3RDPARTY_PYTHON_INTERPRETERS_READ_WRITE_EXPORT }}
-
-      - name: Upload conquest python to Artifactory
-        if: ${{ inputs.artifactory-push }}
-        shell: bash
-        run: |
-          # Upload the conquest python to Artifactory
-          jf c use gh-ccdc-3rdparty-python-interpreters-read-write
-          jfrog rt upload --flat \
-            "${{ env.archive_path }}/${{ env.archive_filename }}" \
-            "ccdc-3rdparty-python-interpreters/conquest_python/2.7/"
-
       - name: Upload conquest python to ProGet
-        if: ${{ inputs.artifactory-push }}
+        if: ${{ inputs.proget-push }}
         shell: bash
         env:
           PROGET_API_KEY: ${{ secrets.PROGET_API_KEY }}
